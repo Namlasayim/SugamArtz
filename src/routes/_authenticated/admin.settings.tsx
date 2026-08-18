@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+const BIO_MAX = 3000;
+
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   component: AdminSettings,
 });
