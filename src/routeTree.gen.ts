@@ -15,6 +15,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomRouteImport } from './routes/custom'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as SoldRouteImport } from './routes/sold'
+import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as PaintingIdRouteImport } from './routes/painting.$id'
 
@@ -48,6 +49,11 @@ const SoldRoute = SoldRouteImport.update({
   path: '/sold',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrackOrderRoute = TrackOrderRouteImport.update({
+  id: '/track-order',
+  path: '/track-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WishlistRoute = WishlistRouteImport.update({
   id: '/wishlist',
   path: '/wishlist',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/custom': typeof CustomRoute
   '/gallery': typeof GalleryRoute
   '/sold': typeof SoldRoute
+  '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
   '/painting/$id': typeof PaintingIdRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/custom': typeof CustomRoute
   '/gallery': typeof GalleryRoute
   '/sold': typeof SoldRoute
+  '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
   '/painting/$id': typeof PaintingIdRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/custom': typeof CustomRoute
   '/gallery': typeof GalleryRoute
   '/sold': typeof SoldRoute
+  '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
   '/painting/$id': typeof PaintingIdRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/gallery'
     | '/sold'
+    | '/track-order'
     | '/wishlist'
     | '/painting/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/gallery'
     | '/sold'
+    | '/track-order'
     | '/wishlist'
     | '/painting/$id'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/custom'
     | '/gallery'
     | '/sold'
+    | '/track-order'
     | '/wishlist'
     | '/painting/$id'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   CustomRoute: typeof CustomRoute
   GalleryRoute: typeof GalleryRoute
   SoldRoute: typeof SoldRoute
+  TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
   PaintingIdRoute: typeof PaintingIdRoute
 }
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SoldRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/track-order': {
+      id: '/track-order'
+      path: '/track-order'
+      fullPath: '/track-order'
+      preLoaderRoute: typeof TrackOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wishlist': {
       id: '/wishlist'
       path: '/wishlist'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomRoute: CustomRoute,
   GalleryRoute: GalleryRoute,
   SoldRoute: SoldRoute,
+  TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
   PaintingIdRoute: PaintingIdRoute,
 }

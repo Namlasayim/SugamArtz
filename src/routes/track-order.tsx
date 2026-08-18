@@ -22,7 +22,7 @@ type TrackedOrder = {
 
 export const Route = createFileRoute("/track-order")({
   validateSearch: (search: Record<string, unknown>) => ({
-    code: typeof search.code === "string" ? search.code : undefined,
+    code: typeof search["code"] === "string" ? (search["code"] as string) : undefined,
   }),
   head: () => ({
     meta: [
