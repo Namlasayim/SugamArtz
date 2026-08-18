@@ -28,7 +28,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (session) void navigate({ to: "/admin" });
+    if (session) void navigate({ to: "/admin" as string });
   }, [session, navigate]);
 
   async function signIn(e: React.FormEvent<HTMLFormElement>) {
@@ -40,8 +40,11 @@ function AuthPage() {
       password: String(data.get("password") ?? ""),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    void navigate({ to: "/admin" });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    void navigate({ to: "/admin" as string });
   }
 
   async function signUp(e: React.FormEvent<HTMLFormElement>) {
@@ -54,7 +57,10 @@ function AuthPage() {
       options: { emailRedirectTo: `${window.location.origin}/admin` },
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Account created. You can sign in now.");
   }
 
@@ -62,9 +68,12 @@ function AuthPage() {
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
-    if (result.error) return toast.error("Google sign-in failed.");
+    if (result.error) {
+      toast.error("Google sign-in failed.");
+      return;
+    }
     if (result.redirected) return;
-    void navigate({ to: "/admin" });
+    void navigate({ to: "/admin" as string });
   }
 
   return (
