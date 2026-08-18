@@ -57,28 +57,23 @@ function CustomPage() {
     }
 
     setSaving(true);
-    const { data, error } = await supabase
-      .from("custom_requests")
-      .insert({
-        name,
-        whatsapp,
-        email: get("email") || null,
-        idea,
-        preferred_size: get("preferred_size") || null,
-        budget: get("budget") || null,
-        deadline: get("deadline") || null,
-        status: "new",
-      } as never)
-      .select("id")
-      .single();
+    const { data, error } = await supabase.rpc("submit_custom_request", {
+      _name: name,
+      _whatsapp: whatsapp,
+      _email: get("email") || null,
+      _idea: idea,
+      _preferred_size: get("preferred_size") || null,
+      _budget: get("budget") || null,
+      _deadline: get("deadline") || null,
+    } as never);
 
     if (error || !data) {
       setSaving(false);
-      toast.error("Could not send the request. Please try again.");
+      toast.error(error?.message ?? "Could not send the request. Please try again.");
       return;
     }
 
-    const requestId = (data as { id: string }).id;
+    const requestId = data as unknown as string;
     const file = form.get("reference_image");
     if (file instanceof File && file.size > 0) {
       try {
@@ -88,8 +83,9 @@ function CustomPage() {
           _storage_path: path,
         } as never);
         if (imageError) throw imageError;
-      } catch {
-        toast.error("The request was sent, but the reference image could not be uploaded.");
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error(`Request sent, but the reference image failed: ${msg}`);
       }
     }
 
