@@ -83,9 +83,11 @@ function CustomPage() {
     if (file instanceof File && file.size > 0) {
       try {
         const path = await uploadFile("custom-request-images", file, `${requestId}/`);
-        await supabase
-          .from("custom_request_images")
-          .insert({ request_id: requestId, storage_path: path } as never);
+        const { error: imageError } = await supabase.rpc("add_custom_request_image", {
+          _request_id: requestId,
+          _storage_path: path,
+        } as never);
+        if (imageError) throw imageError;
       } catch {
         toast.error("The request was sent, but the reference image could not be uploaded.");
       }
