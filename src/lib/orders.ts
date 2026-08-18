@@ -25,68 +25,29 @@ export async function placeOrder(
   input: OrderCustomerInput,
   deliveryFee: number,
 ): Promise<PlacedOrder> {
-  const { data: customer, error: customerError } = await supabase
-    .from("customers")
-    .insert({
-      name: input.name,
-      phone: input.phone,
-      whatsapp: input.whatsapp || null,
-      email: input.email || null,
-    } as never)
-    .select("id")
-    .single();
-  if (customerError) throw customerError;
-
-  const customerId = (customer as { id: string }).id;
-
-  const { data: address, error: addressError } = await supabase
-    .from("addresses")
-    .insert({
-      customer_id: customerId,
-      province: input.province || null,
-      district: input.district || null,
-      municipality: input.municipality || null,
-      address: input.address || null,
-      landmark: input.landmark || null,
-      instructions: input.instructions || null,
-    } as never)
-    .select("id")
-    .single();
-  if (addressError) throw addressError;
-
-  const subtotal = Number(painting.price);
-  const total = subtotal + Number(deliveryFee ?? 0);
-
-  const { data: order, error: orderError } = await supabase
-    .from("orders")
-    .insert({
-      customer_id: customerId,
-      address_id: (address as { id: string }).id,
-      order_number: "pending",
-      status: "pending_confirmation",
-      payment_status: "pending",
-      subtotal,
-      delivery_fee: Number(deliveryFee ?? 0),
-      total,
-    } as never)
-    .select("id, order_number")
-    .single();
-  if (orderError) throw orderError;
-
-  const placed = order as { id: string; order_number: string };
-
-  const { error: itemError } = await supabase.from("order_items").insert({
-    order_id: placed.id,
-    painting_id: painting.id,
-    painting_title_snapshot: painting.title,
-    painting_price_snapshot: subtotal,
-    artwork_id_snapshot: painting.artwork_code,
+  const { data, error } = await supabase.rpc("place_guest_order", {
+    _name: input.name,
+    _phone: input.phone,
+    _whatsapp: input.whatsapp || null,
+    _email: input.email || null,
+    _province: input.province || null,
+    _district: input.district || null,
+    _municipality: input.municipality || null,
+    _address: input.address || null,
+    _landmark: input.landmark || null,
+    _instructions: input.instructions || null,
+    _painting_id: painting.id,
+    _delivery_fee: Number(deliveryFee ?? 0),
   } as never);
-  if (itemError) throw itemError;
+  if (error) throw error;
+
+  const rows = (data ?? []) as Array<{ order_number: string }>;
+  const orderNumber = rows[0]?.order_number;
+  if (!orderNumber) throw new Error("Order could not be created.");
 
   return {
-    orderNumber: placed.order_number,
-    message: orderMessage(placed.order_number, painting, input),
+    orderNumber,
+    message: orderMessage(orderNumber, painting, input),
   };
 }
 
