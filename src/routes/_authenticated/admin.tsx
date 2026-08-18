@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { LogOut, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,45 +36,23 @@ function AdminLayout() {
   const { data: notifications = [] } = useNotifications();
   const unread = notifications.filter((n) => !n.read).length;
 
-  async function claim() {
-    const { data, error } = await supabase.rpc("claim_admin");
-    if (error || !data) {
-      toast.error("An artist account already exists for this studio.");
-      return;
-    }
-    toast.success("You are now the studio owner.");
-    refresh(["is-admin"]);
-  }
-
   async function signOut() {
     await supabase.auth.signOut();
     void navigate({ to: "/admin/login" as string });
   }
+
+  useEffect(() => {
+    if (isLoading || isAdmin !== false) return;
+    toast.error("This account does not have studio access.");
+    void supabase.auth.signOut().then(() => navigate({ to: "/admin/login" as string, replace: true }));
+  }, [isAdmin, isLoading, navigate]);
 
   if (isLoading) {
     return <p className="p-16 text-center text-sm text-muted-foreground">Checking access…</p>;
   }
 
   if (!isAdmin) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-canvas px-5">
-        <div className="max-w-md border border-border bg-background p-10 text-center">
-          <h1 className="font-display text-2xl">Studio access required</h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            This account ({user.email}) is not the studio owner. If this is the artist's first account,
-            claim ownership below.
-          </p>
-          <div className="mt-8 flex flex-col gap-3">
-            <Button onClick={claim} className="rounded-none tracking-[0.12em] uppercase">
-              Claim studio ownership
-            </Button>
-            <Button variant="outline" onClick={signOut} className="rounded-none tracking-[0.12em] uppercase">
-              Sign out
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+    return <p className="p-16 text-center text-sm text-muted-foreground">Redirecting to sign in…</p>;
   }
 
   return (
