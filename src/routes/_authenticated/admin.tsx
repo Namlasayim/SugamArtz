@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-rout
 import { LogOut, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, useNotifications, useRefresh } from "@/lib/admin";
+import { markAllNotificationsRead, useIsAdmin, useNotifications, useRefresh } from "@/lib/admin";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -85,9 +85,17 @@ function AdminLayout() {
             <p className="font-display text-xl">{user.email}</p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-2 text-xs tracking-[0.12em] text-muted-foreground uppercase">
+            <button
+              type="button"
+              onClick={async () => {
+                await markAllNotificationsRead();
+                refresh(["admin-notifications"]);
+              }}
+              className="inline-flex items-center gap-2 text-xs tracking-[0.12em] text-muted-foreground uppercase"
+              aria-label="Mark all notifications as read"
+            >
               <Bell className="h-4 w-4" strokeWidth={1.5} /> {unread} new
-            </span>
+            </button>
             <Button variant="outline" size="sm" onClick={signOut} className="rounded-none">
               <LogOut className="mr-2 h-4 w-4" strokeWidth={1.5} /> Sign out
             </Button>
