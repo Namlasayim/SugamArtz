@@ -8,7 +8,7 @@ export const ARTIST_BUCKET = "artist-assets";
 /** Neutral placeholders — never a fabricated artist. Real values come from admin settings. */
 export const EMPTY_SETTINGS: SiteSettings = {
   id: 1,
-  artist_name: "The Studio",
+  artist_name: "",
   artist_statement: "",
   artist_bio: null,
   hero_image: null,
