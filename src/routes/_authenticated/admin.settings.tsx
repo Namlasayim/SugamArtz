@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+const BIO_MAX = 3000;
+
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   component: AdminSettings,
 });
@@ -18,11 +20,18 @@ function AdminSettings() {
   const { settings, isLoading } = useSettings();
   const refresh = useRefresh();
   const [saving, setSaving] = useState(false);
+  const [bio, setBio] = useState(settings.artist_bio ?? "");
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const get = (k: string) => String(data.get(k) ?? "").trim();
+
+    const bioValue = get("bio");
+    if (bioValue.length > BIO_MAX) {
+      toast.error(`Biography must be ${BIO_MAX} characters or fewer.`);
+      return;
+    }
 
     setSaving(true);
 
@@ -39,7 +48,7 @@ function AdminSettings() {
     const payload: Record<string, unknown> = {
       id: 1,
       artist_name: get("artist_name"),
-      bio: get("bio") || null,
+      bio: bioValue || null,
       whatsapp_number: get("whatsapp_number"),
       instagram_username: get("instagram_username"),
       email: get("email"),
@@ -77,7 +86,23 @@ function AdminSettings() {
       <h1 className="font-display text-3xl">Studio settings</h1>
       <form onSubmit={submit} className="max-w-2xl space-y-4 bg-background p-6 sm:p-8">
         <Field name="artist_name" label="Artist name" defaultValue={settings.artist_name} />
-        <TextField name="bio" label="Biography" defaultValue={settings.artist_bio ?? ""} rows={6} />
+        <div className="space-y-2">
+          <Label htmlFor="bio" className="eyebrow">
+            Biography
+          </Label>
+          <Textarea
+            id="bio"
+            name="bio"
+            rows={8}
+            maxLength={BIO_MAX}
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            className="rounded-none"
+          />
+          <p className="text-right text-xs text-muted-foreground">
+            {bio.length} / {BIO_MAX}
+          </p>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="profile_image" className="eyebrow">
             Portrait / hero image
@@ -125,23 +150,3 @@ function Field({
   );
 }
 
-function TextField({
-  name,
-  label,
-  defaultValue,
-  rows,
-}: {
-  name: string;
-  label: string;
-  defaultValue: string;
-  rows: number;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={name} className="eyebrow">
-        {label}
-      </Label>
-      <Textarea id={name} name={name} rows={rows} defaultValue={defaultValue} className="rounded-none" />
-    </div>
-  );
-}
