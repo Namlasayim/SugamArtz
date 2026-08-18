@@ -33,7 +33,7 @@ function AdminLayout() {
   const refresh = useRefresh();
   const { data: isAdmin, isLoading } = useIsAdmin(user.id);
   const { data: notifications = [] } = useNotifications();
-  const unread = notifications.filter((n) => !n.is_read).length;
+  const unread = notifications.filter((n) => !n.read).length;
 
   async function claim() {
     const { data, error } = await supabase.rpc("claim_admin");
@@ -47,7 +47,7 @@ function AdminLayout() {
 
   async function signOut() {
     await supabase.auth.signOut();
-    void navigate({ to: "/auth" });
+    void navigate({ to: "/admin/login" as string });
   }
 
   if (isLoading) {
