@@ -1,0 +1,3 @@
+DELETE FROM public.custom_request_images WHERE request_id IN (SELECT id FROM public.custom_requests WHERE name IN ('Test D','Test TrueTrue','Test TrueFalse','Test FalseTrue','Test FalseFalse'));
+DELETE FROM public.custom_requests WHERE name IN ('Test D','Test TrueTrue','Test TrueFalse','Test FalseTrue','Test FalseFalse');
+DELETE FROM public.notifications WHERE type='custom' AND message LIKE 'Test %';

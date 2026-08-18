@@ -20,12 +20,25 @@ export async function signedUrls(bucket: string, paths: string[]) {
   return map;
 }
 
+/** crypto.randomUUID() is missing in older iOS Safari and many in-app browsers. */
+export function randomId() {
+  const c = typeof crypto !== "undefined" ? crypto : undefined;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  if (c && typeof c.getRandomValues === "function") {
+    const bytes = c.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  return `${Date.now().toString(16)}${Math.random().toString(16).slice(2, 12)}`;
+}
+
 export async function uploadFile(bucket: string, file: File, prefix = "") {
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const path = `${prefix}${crypto.randomUUID()}.${ext}`;
+  const raw = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const ext = /^[a-z0-9]{1,5}$/.test(raw) ? raw : "jpg";
+  const path = `${prefix}${randomId()}.${ext}`;
   const { error } = await supabase.storage.from(bucket).upload(path, file, {
     cacheControl: "31536000",
     upsert: false,
+    contentType: file.type || "application/octet-stream",
   });
   if (error) throw error;
   return path;
