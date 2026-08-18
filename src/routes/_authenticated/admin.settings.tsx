@@ -20,11 +20,18 @@ function AdminSettings() {
   const { settings, isLoading } = useSettings();
   const refresh = useRefresh();
   const [saving, setSaving] = useState(false);
+  const [bio, setBio] = useState(settings.artist_bio ?? "");
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const get = (k: string) => String(data.get(k) ?? "").trim();
+
+    const bioValue = get("bio");
+    if (bioValue.length > BIO_MAX) {
+      toast.error(`Biography must be ${BIO_MAX} characters or fewer.`);
+      return;
+    }
 
     setSaving(true);
 
@@ -41,7 +48,7 @@ function AdminSettings() {
     const payload: Record<string, unknown> = {
       id: 1,
       artist_name: get("artist_name"),
-      bio: get("bio") || null,
+      bio: bioValue || null,
       whatsapp_number: get("whatsapp_number"),
       instagram_username: get("instagram_username"),
       email: get("email"),
