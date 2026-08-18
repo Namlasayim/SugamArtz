@@ -150,23 +150,3 @@ function Field({
   );
 }
 
-function TextField({
-  name,
-  label,
-  defaultValue,
-  rows,
-}: {
-  name: string;
-  label: string;
-  defaultValue: string;
-  rows: number;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={name} className="eyebrow">
-        {label}
-      </Label>
-      <Textarea id={name} name={name} rows={rows} defaultValue={defaultValue} className="rounded-none" />
-    </div>
-  );
-}
