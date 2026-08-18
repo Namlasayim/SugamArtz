@@ -86,7 +86,23 @@ function AdminSettings() {
       <h1 className="font-display text-3xl">Studio settings</h1>
       <form onSubmit={submit} className="max-w-2xl space-y-4 bg-background p-6 sm:p-8">
         <Field name="artist_name" label="Artist name" defaultValue={settings.artist_name} />
-        <TextField name="bio" label="Biography" defaultValue={settings.artist_bio ?? ""} rows={6} />
+        <div className="space-y-2">
+          <Label htmlFor="bio" className="eyebrow">
+            Biography
+          </Label>
+          <Textarea
+            id="bio"
+            name="bio"
+            rows={8}
+            maxLength={BIO_MAX}
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            className="rounded-none"
+          />
+          <p className="text-right text-xs text-muted-foreground">
+            {bio.length} / {BIO_MAX}
+          </p>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="profile_image" className="eyebrow">
             Portrait / hero image
