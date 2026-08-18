@@ -37,6 +37,7 @@ function Index() {
     .slice(0, 4);
   const sold = paintings.filter((p) => p.availability === "sold").slice(0, 3);
   const hero = settings.hero_image ?? paintingImage(available[0] ?? { images: [] });
+  const instagramTiles = paintings.filter((p) => paintingImage(p)).slice(0, 4);
 
   return (
     <SiteShell>
@@ -44,7 +45,7 @@ function Index() {
       <section className="relative">
         <div className="grid lg:grid-cols-[1.05fr_1fr]">
           <div className="order-2 flex flex-col justify-center px-5 py-14 sm:py-20 lg:order-1 lg:px-16">
-            <p className="eyebrow">Original works · Kathmandu, Nepal</p>
+            <p className="eyebrow">Original paintings{settings.location ? ` · ${settings.location}` : ""}</p>
             <h1 className="mt-6 font-display text-[2.6rem] leading-[1.05] sm:text-6xl lg:text-7xl">
               {settings.artist_name}
             </h1>
@@ -66,13 +67,17 @@ function Index() {
             </div>
           </div>
           <div className="order-1 lg:order-2">
-            <img
-              src={hero}
-              alt={`Featured painting by ${settings.artist_name}`}
-              width={1408}
-              height={1008}
-              className="h-[46vh] w-full object-cover sm:h-[60vh] lg:h-full lg:min-h-[38rem]"
-            />
+            {hero ? (
+              <img
+                src={hero}
+                alt={`Featured painting by ${settings.artist_name}`}
+                className="h-[46vh] w-full object-cover sm:h-[60vh] lg:h-full lg:min-h-[38rem]"
+              />
+            ) : (
+              <div className="flex h-[46vh] w-full items-center justify-center bg-canvas sm:h-[60vh] lg:h-full lg:min-h-[38rem]">
+                <p className="text-xs tracking-[0.24em] text-muted-foreground uppercase">Artwork coming soon</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -101,7 +106,7 @@ function Index() {
             ))}
           </div>
         ) : (
-          <EmptyNote>No featured works are on view at the moment.</EmptyNote>
+          <EmptyNote>New artwork coming soon.</EmptyNote>
         )}
       </Section>
 
@@ -110,34 +115,39 @@ function Index() {
         <SectionHeading eyebrow="Fresh from the easel" title="Latest paintings" />
         {isLoading ? (
           <GridSkeleton count={4} />
-        ) : (
+        ) : latest.length ? (
           <div className="grid gap-x-6 gap-y-12 grid-cols-2 lg:grid-cols-4">
             {latest.map((p) => (
               <PaintingCard key={p.id} painting={p} />
             ))}
           </div>
+        ) : (
+          <EmptyNote>No artworks available yet.</EmptyNote>
         )}
       </Section>
 
       {/* Story */}
       <Section className="pt-24 sm:pt-32">
         <div className="grid items-center gap-10 bg-canvas p-6 sm:p-12 lg:grid-cols-2 lg:gap-16">
-          <img
-            src="/artwork/artist-portrait.jpg"
-            alt={`${settings.artist_name} in her studio`}
-            loading="lazy"
-            width={1104}
-            height={1408}
-            className="aspect-4/5 w-full object-cover"
-          />
+          {settings.hero_image ? (
+            <img
+              src={settings.hero_image}
+              alt={`${settings.artist_name} in the studio`}
+              loading="lazy"
+              className="aspect-4/5 w-full object-cover"
+            />
+          ) : (
+            <div className="flex aspect-4/5 w-full items-center justify-center border border-dashed border-border">
+              <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Studio portrait coming soon</p>
+            </div>
+          )}
           <div>
             <p className="eyebrow">The artist</p>
             <h2 className="mt-4 font-display text-3xl leading-tight sm:text-4xl">
               A studio practice rooted in the valley
             </h2>
             <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-              {settings.artist_bio ??
-                "Working in oil and acrylic from a small studio in the Kathmandu Valley, translating Himalayan light, Newari heritage and everyday ritual into contemporary canvases."}
+              {settings.artist_bio ?? "The artist's story will appear here soon."}
             </p>
             <Link
               to="/about"
@@ -160,14 +170,19 @@ function Index() {
             </Link>
           }
         />
-        <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-          {sold.map((p) => (
-            <PaintingCard key={p.id} painting={p} />
-          ))}
-        </div>
+        {sold.length ? (
+          <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            {sold.map((p) => (
+              <PaintingCard key={p.id} painting={p} />
+            ))}
+          </div>
+        ) : (
+          <EmptyNote>No sold works yet.</EmptyNote>
+        )}
       </Section>
 
       {/* Instagram */}
+      {settings.instagram_username && (
       <Section className="pt-24 sm:pt-32">
         <div className="border border-border p-8 text-center sm:p-14">
           <p className="eyebrow">Instagram</p>
@@ -176,10 +191,10 @@ function Index() {
             Works in progress, studio light and new canvases before they reach the gallery.
           </p>
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {paintings.slice(0, 4).map((p) => (
+            {instagramTiles.map((p) => (
               <img
                 key={p.id}
-                src={paintingImage(p)}
+                src={paintingImage(p)!}
                 alt={p.title}
                 loading="lazy"
                 className="aspect-square w-full object-cover"
@@ -193,6 +208,7 @@ function Index() {
           </Button>
         </div>
       </Section>
+      )}
 
       {/* Contact */}
       <Section className="pt-24 sm:pt-32">

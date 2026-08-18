@@ -5,8 +5,8 @@ import { toast } from "sonner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { Section } from "@/components/site/Section";
 import { useSettings, whatsappLink } from "@/lib/site";
-import { generateCode } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
+import { uploadFile } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,41 +48,57 @@ function CustomPage() {
     const form = new FormData(e.currentTarget);
     const get = (k: string) => String(form.get(k) ?? "").trim();
 
-    const full_name = get("full_name");
+    const name = get("full_name");
     const idea = get("idea");
     const whatsapp = get("whatsapp");
-    if (full_name.length < 2 || idea.length < 10 || whatsapp.length < 7) {
+    if (name.length < 2 || idea.length < 10 || whatsapp.length < 7) {
       toast.error("Please add your name, WhatsApp number and a short description of your idea.");
       return;
     }
 
     setSaving(true);
-    const request_code = generateCode("CR");
-    const { error } = await supabase.from("custom_requests").insert({
-      request_code,
-      full_name,
-      whatsapp,
-      email: get("email") || null,
-      idea,
-      preferred_size: get("preferred_size") || null,
-      budget: get("budget") || null,
-      deadline: get("deadline") || null,
-      reference_image: get("reference_image") || null,
-    } as never);
-    setSaving(false);
+    const { data, error } = await supabase
+      .from("custom_requests")
+      .insert({
+        name,
+        whatsapp,
+        email: get("email") || null,
+        idea,
+        preferred_size: get("preferred_size") || null,
+        budget: get("budget") || null,
+        deadline: get("deadline") || null,
+        status: "new",
+      } as never)
+      .select("id")
+      .single();
 
-    if (error) {
+    if (error || !data) {
+      setSaving(false);
       toast.error("Could not send the request. Please try again.");
       return;
     }
 
-    setDone(request_code);
+    const requestId = (data as { id: string }).id;
+    const file = form.get("reference_image");
+    if (file instanceof File && file.size > 0) {
+      try {
+        const path = await uploadFile("custom-request-images", file, `${requestId}/`);
+        await supabase
+          .from("custom_request_images")
+          .insert({ request_id: requestId, storage_path: path } as never);
+      } catch {
+        toast.error("The request was sent, but the reference image could not be uploaded.");
+      }
+    }
+
+    setSaving(false);
+    setDone(requestId);
     toast.success("Request sent to the artist.");
+
     const message = [
       `Namaste! I'd like to commission a custom painting.`,
       ``,
-      `Request: ${request_code}`,
-      `Name: ${full_name}`,
+      `Name: ${name}`,
       `Idea: ${idea}`,
       get("preferred_size") ? `Size: ${get("preferred_size")}` : "",
       get("budget") ? `Budget: ${get("budget")}` : "",
@@ -90,7 +106,9 @@ function CustomPage() {
     ]
       .filter(Boolean)
       .join("\n");
-    window.open(whatsappLink(settings.whatsapp_number, message), "_blank", "noopener");
+    if (settings.whatsapp_number) {
+      window.open(whatsappLink(settings.whatsapp_number, message), "_blank", "noopener");
+    }
   }
 
   return (
@@ -124,7 +142,7 @@ function CustomPage() {
             </p>
             {done && (
               <p className="mt-6 border border-gold bg-background p-4 text-sm">
-                Request <strong>{done}</strong> received. Keep this code for reference.
+                Your request has been sent. The artist will reply on WhatsApp.
               </p>
             )}
           </div>
@@ -152,9 +170,20 @@ function CustomPage() {
             <div className="grid gap-4 sm:grid-cols-3">
               <Field name="preferred_size" label="Size" />
               <Field name="budget" label="Budget" />
-              <Field name="deadline" label="Needed by" />
+              <Field name="deadline" label="Needed by" type="date" />
             </div>
-            <Field name="reference_image" label="Reference image link" />
+            <div className="space-y-2">
+              <Label htmlFor="reference_image" className="eyebrow">
+                Reference image
+              </Label>
+              <Input
+                id="reference_image"
+                name="reference_image"
+                type="file"
+                accept="image/*"
+                className="rounded-none bg-background"
+              />
+            </div>
             <Button
               type="submit"
               size="lg"

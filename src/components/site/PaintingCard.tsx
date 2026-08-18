@@ -19,16 +19,22 @@ export function PaintingCard({ painting, priority }: { painting: Painting; prior
         className="block focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       >
         <div className="relative overflow-hidden bg-canvas">
-          <img
-            src={paintingImage(painting)}
-            alt={`${painting.title} — ${painting.medium ?? "original painting"}`}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
-            className={cn(
-              "aspect-4/5 w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]",
-              sold && "opacity-85",
-            )}
-          />
+          {paintingImage(painting) ? (
+            <img
+              src={paintingImage(painting)!}
+              alt={`${painting.title} — ${painting.medium ?? "original painting"}`}
+              loading={priority ? "eager" : "lazy"}
+              decoding="async"
+              className={cn(
+                "aspect-4/5 w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.04]",
+                sold && "opacity-85",
+              )}
+            />
+          ) : (
+            <div className="flex aspect-4/5 w-full items-center justify-center border border-dashed border-border">
+              <span className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">No image</span>
+            </div>
+          )}
           {sold && (
             <span className="absolute top-0 left-0 bg-ink/85 px-3 py-1.5 text-[10px] tracking-[0.22em] text-background uppercase">
               Sold

@@ -12,13 +12,13 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type TrackedOrder = {
-  order_code: string;
-  painting_title: string;
+  order_number: string;
+  items: string | null;
   status: string;
   payment_status: string;
   created_at: string;
   updated_at: string;
-};
+}
 
 export const Route = createFileRoute("/track-order")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -50,7 +50,7 @@ function TrackPage() {
     const trimmed = raw.trim();
     if (trimmed.length < 4) return;
     setState("loading");
-    const { data, error } = await supabase.rpc("track_order", { _order_code: trimmed });
+    const { data, error } = await supabase.rpc("track_order", { _order_number: trimmed });
     const row = (data as TrackedOrder[] | null)?.[0] ?? null;
     if (error || !row) {
       setOrder(null);
@@ -75,7 +75,7 @@ function TrackPage() {
         <p className="eyebrow">Order status</p>
         <h1 className="mt-4 font-display text-4xl sm:text-5xl">Track your order</h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Enter the order code you received when you placed your order (it looks like ORD-XXXXXX).
+          Enter the order code you received when you placed your order (it looks like ART-ORDER-2026-0001).
         </p>
 
         <form
@@ -88,7 +88,7 @@ function TrackPage() {
           <Input
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="ORD-XXXXXX"
+            placeholder="ART-ORDER-2026-0001"
             aria-label="Order code"
             className="rounded-none uppercase"
           />
@@ -120,15 +120,15 @@ function TrackPage() {
           <div className="mt-12 max-w-2xl border border-border p-6 sm:p-10">
             <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border pb-6">
               <div>
-                <p className="eyebrow">Order {order.order_code}</p>
-                <h2 className="mt-2 font-display text-2xl">{order.painting_title}</h2>
+                <p className="eyebrow">Order {order.order_number}</p>
+                <h2 className="mt-2 font-display text-2xl">{order.items}</h2>
               </div>
               <p className="text-sm text-muted-foreground">Placed {formatDate(order.created_at)}</p>
             </div>
 
             <p className="mt-6 text-sm">
               <span className="text-muted-foreground">Payment:</span>{" "}
-              <span className="capitalize">{order.payment_status}</span>
+              <span>{order.payment_status === "paid" ? "Payment confirmed" : "Payment pending"}</span>
             </p>
 
             {cancelled ? (
