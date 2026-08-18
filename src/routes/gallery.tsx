@@ -142,7 +142,7 @@ function GalleryPage() {
             min={0}
             max={priceCeiling}
             step={1000}
-            onValueChange={([v]) => setMaxPrice(v)}
+            onValueChange={(v) => setMaxPrice(v[0] ?? priceCeiling)}
             className="max-w-xs flex-1"
             aria-label="Maximum price"
           />
