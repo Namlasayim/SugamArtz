@@ -540,6 +540,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_custom_request_image: {
+        Args: { _request_id: string; _storage_path: string }
+        Returns: undefined
+      }
       claim_admin: { Args: never; Returns: boolean }
       confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
       has_role: {
@@ -548,6 +552,25 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      place_guest_order: {
+        Args: {
+          _address: string
+          _delivery_fee: number
+          _district: string
+          _email: string
+          _instructions: string
+          _landmark: string
+          _municipality: string
+          _name: string
+          _painting_id: string
+          _phone: string
+          _province: string
+          _whatsapp: string
+        }
+        Returns: {
+          order_number: string
+        }[]
       }
       track_order: {
         Args: { _order_number: string }
