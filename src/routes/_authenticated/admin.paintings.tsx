@@ -201,12 +201,14 @@ function PaintingDialog({
       for (const file of files) {
         try {
           const path = await uploadFile(PAINTING_BUCKET, file, `${paintingId}/`);
-          await supabase
+          const { error: linkError } = await supabase
             .from("painting_images")
             .insert({ painting_id: paintingId, storage_path: path, sort_order: index } as never);
+          if (linkError) throw linkError;
           index += 1;
-        } catch {
-          toast.error(`Could not upload ${file.name}.`);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "";
+          toast.error(`Could not upload ${file.name}.${message ? ` ${message}` : ""}`);
         }
       }
     }
