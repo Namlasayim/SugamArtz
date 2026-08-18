@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useSettings } from "@/lib/site";
+import { useSettings, ARTIST_BUCKET } from "@/lib/site";
 import { useRefresh } from "@/lib/admin";
+import { uploadFile } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,18 +25,30 @@ function AdminSettings() {
     const get = (k: string) => String(data.get(k) ?? "").trim();
 
     setSaving(true);
-    const { error } = await supabase.from("site_settings").upsert({
+
+    let profileImagePath: string | null | undefined;
+    const file = data.get("profile_image");
+    if (file instanceof File && file.size > 0) {
+      try {
+        profileImagePath = await uploadFile(ARTIST_BUCKET, file, "profile/");
+      } catch {
+        toast.error("Could not upload the portrait.");
+      }
+    }
+
+    const payload: Record<string, unknown> = {
       id: 1,
       artist_name: get("artist_name"),
-      artist_statement: get("artist_statement"),
-      artist_bio: get("artist_bio") || null,
-      hero_image: get("hero_image") || null,
+      bio: get("bio") || null,
       whatsapp_number: get("whatsapp_number"),
       instagram_username: get("instagram_username"),
-      contact_email: get("contact_email"),
+      email: get("email"),
       location: get("location"),
       delivery_fee: Number(get("delivery_fee") || 0),
-    } as never);
+    };
+    if (profileImagePath) payload["profile_image_url"] = profileImagePath;
+
+    const { error } = await supabase.from("artist_settings").upsert(payload as never);
     setSaving(false);
 
     if (error) {
@@ -43,7 +56,7 @@ function AdminSettings() {
       return;
     }
     toast.success("Settings saved.");
-    refresh(["site-settings"]);
+    refresh(["artist-settings"]);
   }
 
   return (
@@ -51,15 +64,22 @@ function AdminSettings() {
       <h1 className="font-display text-3xl">Studio settings</h1>
       <form onSubmit={submit} className="max-w-2xl space-y-4 bg-background p-6 sm:p-8">
         <Field name="artist_name" label="Artist name" defaultValue={settings.artist_name} />
-        <TextField name="artist_statement" label="Short statement" defaultValue={settings.artist_statement} rows={2} />
-        <TextField name="artist_bio" label="Biography" defaultValue={settings.artist_bio ?? ""} rows={5} />
-        <Field name="hero_image" label="Hero image URL" defaultValue={settings.hero_image ?? ""} />
+        <TextField name="bio" label="Biography" defaultValue={settings.artist_bio ?? ""} rows={6} />
+        <div className="space-y-2">
+          <Label htmlFor="profile_image" className="eyebrow">
+            Portrait / hero image
+          </Label>
+          {settings.hero_image && (
+            <img src={settings.hero_image} alt="Current portrait" className="h-28 w-28 object-cover" />
+          )}
+          <Input id="profile_image" name="profile_image" type="file" accept="image/*" className="rounded-none" />
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field name="whatsapp_number" label="WhatsApp number" defaultValue={settings.whatsapp_number} />
           <Field name="instagram_username" label="Instagram username" defaultValue={settings.instagram_username} />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field name="contact_email" label="Contact email" type="email" defaultValue={settings.contact_email} />
+          <Field name="email" label="Contact email" type="email" defaultValue={settings.contact_email} />
           <Field name="location" label="Location" defaultValue={settings.location} />
           <Field name="delivery_fee" label="Delivery fee (NPR)" type="number" defaultValue={settings.delivery_fee} />
         </div>
