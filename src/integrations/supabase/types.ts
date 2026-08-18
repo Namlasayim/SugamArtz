@@ -544,6 +544,10 @@ export type Database = {
         Args: { _request_id: string; _storage_path: string }
         Returns: undefined
       }
+      can_attach_custom_request_file: {
+        Args: { _path: string }
+        Returns: boolean
+      }
       claim_admin: { Args: never; Returns: boolean }
       confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
       has_role: {
