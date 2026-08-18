@@ -97,7 +97,12 @@ function AdminOrders() {
                   {o.order_items.map((i) => i.painting_title_snapshot).join(", ") || "Order"}
                 </h2>
               </div>
-              <p className="font-display text-lg">{formatPrice(Number(o.total))}</p>
+              <div className="text-right">
+                <p className="font-display text-lg">{formatPrice(Number(o.total))}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatPrice(Number(o.subtotal))} + {formatPrice(Number(o.delivery_fee))} delivery
+                </p>
+              </div>
             </div>
 
             <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
