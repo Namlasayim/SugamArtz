@@ -42,6 +42,18 @@ function CustomPage() {
   const { settings } = useSettings();
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const [waLink, setWaLink] = useState<string | null>(null);
+
+  const MAX_BYTES = 15 * 1024 * 1024;
+  function checkFile(file: File) {
+    const name = file.name.toLowerCase();
+    const okType =
+      (file.type && file.type.startsWith("image/")) ||
+      /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif)$/.test(name);
+    if (!okType) return "Please choose an image file (JPG, PNG, WEBP or HEIC).";
+    if (file.size > MAX_BYTES) return "That image is larger than 15 MB. Please choose a smaller photo.";
+    return null;
+  }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -54,6 +66,15 @@ function CustomPage() {
     if (name.length < 2 || idea.length < 10 || whatsapp.length < 7) {
       toast.error("Please add your name, WhatsApp number and a short description of your idea.");
       return;
+    }
+
+    const picked = form.get("reference_image");
+    if (picked instanceof File && picked.size > 0) {
+      const problem = checkFile(picked);
+      if (problem) {
+        toast.error(problem);
+        return;
+      }
     }
 
     setSaving(true);
@@ -74,7 +95,7 @@ function CustomPage() {
     }
 
     const requestId = data as unknown as string;
-    const file = form.get("reference_image");
+    const file = picked;
     if (file instanceof File && file.size > 0) {
       try {
         const path = await uploadFile("custom-request-images", file, `${requestId}/`);
@@ -105,7 +126,11 @@ function CustomPage() {
       .filter(Boolean)
       .join("\n");
     if (settings.whatsapp_number) {
-      window.open(whatsappLink(settings.whatsapp_number, message), "_blank", "noopener");
+      const link = whatsappLink(settings.whatsapp_number, message);
+      setWaLink(link);
+      // Mobile and in-app browsers often block popups opened after an await.
+      const opened = window.open(link, "_blank", "noopener");
+      if (!opened) toast.message("Tap “Continue on WhatsApp” to send your message.");
     }
   }
 
@@ -141,6 +166,14 @@ function CustomPage() {
             {done && (
               <p className="mt-6 border border-gold bg-background p-4 text-sm">
                 Your request has been sent. The artist will reply on WhatsApp.
+                {waLink && (
+                  <>
+                    {" "}
+                    <a href={waLink} target="_blank" rel="noopener noreferrer" className="underline">
+                      Continue on WhatsApp
+                    </a>
+                  </>
+                )}
               </p>
             )}
           </div>
@@ -178,9 +211,12 @@ function CustomPage() {
                 id="reference_image"
                 name="reference_image"
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 className="rounded-none bg-background"
               />
+              <p className="text-xs text-muted-foreground">
+                Optional. JPG, PNG, WEBP or HEIC, up to 15 MB.
+              </p>
             </div>
             <Button
               type="submit"
