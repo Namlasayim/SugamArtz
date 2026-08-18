@@ -16,13 +16,14 @@ function AdminOverview() {
   const { data: notifications = [] } = useNotifications();
 
   const revenue = orders
-    .filter((o) => o.status !== "cancelled")
+    .filter((o) => o.payment_status === "paid")
     .reduce((sum, o) => sum + Number(o.total), 0);
 
   const stats = [
     { label: "Paintings", value: String(paintings.length) },
     { label: "Available", value: String(paintings.filter((p) => p.availability === "available").length) },
-    { label: "Orders", value: String(orders.length) },
+    { label: "Sold", value: String(paintings.filter((p) => p.availability === "sold").length) },
+    { label: "Pending orders", value: String(orders.filter((o) => o.status === "pending_confirmation").length) },
     { label: "Revenue", value: formatPrice(revenue) },
     { label: "Commissions", value: String(requests.filter((r) => r.status === "new").length) },
     { label: "Unread messages", value: String(messages.filter((m) => !m.is_read).length) },
@@ -30,7 +31,7 @@ function AdminOverview() {
 
   return (
     <div className="space-y-10">
-      <div className="grid gap-px bg-border sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-px bg-border sm:grid-cols-3 lg:grid-cols-7">
         {stats.map((s) => (
           <div key={s.label} className="bg-background p-5">
             <p className="eyebrow">{s.label}</p>
@@ -44,7 +45,8 @@ function AdminOverview() {
           {orders.slice(0, 6).map((o) => (
             <li key={o.id} className="flex items-baseline justify-between gap-4 border-b border-border py-3 text-sm last:border-0">
               <span>
-                <span className="text-muted-foreground">{o.order_code}</span> · {o.painting_title}
+                <span className="text-muted-foreground">{o.order_number}</span> ·{" "}
+                {o.order_items.map((i) => i.painting_title_snapshot).join(", ")}
               </span>
               <span className="shrink-0 text-xs tracking-[0.12em] text-muted-foreground uppercase">
                 {STAGE_LABELS[o.status] ?? o.status}

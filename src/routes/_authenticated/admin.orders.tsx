@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useOrders, useRefresh } from "@/lib/admin";
+import { confirmPayment, useOrders, useRefresh } from "@/lib/admin";
 import { formatDate, formatPrice } from "@/lib/format";
 import { ORDER_STAGES, STAGE_LABELS, type Order } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -30,17 +30,30 @@ function AdminOrders() {
     if (filter !== "all" && o.status !== filter) return false;
     const term = search.trim().toLowerCase();
     if (!term) return true;
-    return `${o.order_code} ${o.full_name} ${o.painting_title} ${o.phone}`.toLowerCase().includes(term);
+    const titles = o.order_items.map((i) => i.painting_title_snapshot).join(" ");
+    return `${o.order_number} ${o.customers?.name ?? ""} ${titles} ${o.customers?.phone ?? ""}`
+      .toLowerCase()
+      .includes(term);
   });
 
-  async function update(order: Order, patch: Partial<Order>) {
+  async function update(order: Order, patch: Record<string, unknown>) {
     const { error } = await supabase.from("orders").update(patch as never).eq("id", order.id);
     if (error) {
       toast.error("Could not update the order.");
       return;
     }
     toast.success("Order updated.");
-    refresh(["admin-orders"]);
+    refresh(["admin-orders", "admin-notifications", "paintings"]);
+  }
+
+  async function markPaid(order: Order) {
+    try {
+      await confirmPayment(order.id);
+      toast.success("Payment recorded and the order confirmed.");
+      refresh(["admin-orders", "admin-notifications", "paintings"]);
+    } catch {
+      toast.error("Could not record the payment.");
+    }
   }
 
   return (
@@ -79,22 +92,37 @@ function AdminOrders() {
           <article key={o.id} className="bg-background p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <div>
-                <p className="eyebrow">{o.order_code} · {formatDate(o.created_at)}</p>
-                <h2 className="mt-1 font-display text-xl">{o.painting_title}</h2>
+                <p className="eyebrow">{o.order_number} · {formatDate(o.created_at)}</p>
+                <h2 className="mt-1 font-display text-xl">
+                  {o.order_items.map((i) => i.painting_title_snapshot).join(", ") || "Order"}
+                </h2>
               </div>
               <p className="font-display text-lg">{formatPrice(Number(o.total))}</p>
             </div>
 
             <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-              <p>{o.full_name} · {o.phone}</p>
-              <p>{o.email ?? "No email"}</p>
+              <p>{o.customers?.name ?? "—"} · {o.customers?.phone ?? "—"}</p>
+              <p>{o.customers?.email ?? "No email"}</p>
               <p className="sm:col-span-2">
-                {[o.address, o.municipality, o.district, o.province].filter(Boolean).join(", ") || "No address"}
+                {[o.addresses?.address, o.addresses?.municipality, o.addresses?.district, o.addresses?.province]
+                  .filter(Boolean)
+                  .join(", ") || "No address"}
               </p>
-              {o.instructions && <p className="sm:col-span-2">Note: {o.instructions}</p>}
+              {o.addresses?.instructions && <p className="sm:col-span-2">Note: {o.addresses.instructions}</p>}
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <span className="text-xs tracking-[0.12em] text-muted-foreground uppercase">
+                Payment: {o.payment_status === "paid" ? "Received" : "Pending"}
+              </span>
+              {o.payment_status !== "paid" && o.status !== "cancelled" && (
+                <Button size="sm" className="rounded-none tracking-[0.12em] uppercase" onClick={() => markPaid(o)}>
+                  Mark payment received
+                </Button>
+              )}
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Select value={o.status} onValueChange={(v) => update(o, { status: v })}>
                 <SelectTrigger className="rounded-none" aria-label="Order status">
                   <SelectValue />
@@ -108,24 +136,12 @@ function AdminOrders() {
                 </SelectContent>
               </Select>
 
-              <Select value={o.payment_status} onValueChange={(v) => update(o, { payment_status: v })}>
-                <SelectTrigger className="rounded-none" aria-label="Payment status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Payment pending</SelectItem>
-                  <SelectItem value="partial">Advance received</SelectItem>
-                  <SelectItem value="paid">Paid in full</SelectItem>
-                  <SelectItem value="refunded">Refunded</SelectItem>
-                </SelectContent>
-              </Select>
-
               <NoteEditor value={o.admin_notes} onSave={(admin_notes) => update(o, { admin_notes })} />
             </div>
           </article>
         ))}
         {!isLoading && rows.length === 0 && (
-          <p className="bg-background p-10 text-center text-sm text-muted-foreground">No orders match.</p>
+          <p className="bg-background p-10 text-center text-sm text-muted-foreground">No orders yet.</p>
         )}
       </div>
     </div>

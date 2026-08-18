@@ -14,6 +14,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      addresses: {
+        Row: {
+          address: string | null
+          created_at: string
+          customer_id: string
+          district: string | null
+          id: string
+          instructions: string | null
+          landmark: string | null
+          municipality: string | null
+          province: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          customer_id: string
+          district?: string | null
+          id?: string
+          instructions?: string | null
+          landmark?: string | null
+          municipality?: string | null
+          province?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          customer_id?: string
+          district?: string | null
+          id?: string
+          instructions?: string | null
+          landmark?: string | null
+          municipality?: string | null
+          province?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addresses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_settings: {
+        Row: {
+          artist_name: string
+          bio: string | null
+          delivery_fee: number
+          email: string
+          id: number
+          instagram_username: string
+          location: string
+          profile_image_url: string | null
+          updated_at: string
+          whatsapp_number: string
+        }
+        Insert: {
+          artist_name?: string
+          bio?: string | null
+          delivery_fee?: number
+          email?: string
+          id?: number
+          instagram_username?: string
+          location?: string
+          profile_image_url?: string | null
+          updated_at?: string
+          whatsapp_number?: string
+        }
+        Update: {
+          artist_name?: string
+          bio?: string | null
+          delivery_fee?: number
+          email?: string
+          id?: number
+          instagram_username?: string
+          location?: string
+          profile_image_url?: string | null
+          updated_at?: string
+          whatsapp_number?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       contact_messages: {
         Row: {
           created_at: string
@@ -44,6 +145,38 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_request_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          request_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          request_id: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          request_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_request_images_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "custom_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_requests: {
         Row: {
           admin_notes: string | null
@@ -51,12 +184,10 @@ export type Database = {
           created_at: string
           deadline: string | null
           email: string | null
-          full_name: string
           id: string
           idea: string
+          name: string
           preferred_size: string | null
-          reference_image: string | null
-          request_code: string
           status: string
           updated_at: string
           whatsapp: string | null
@@ -67,12 +198,10 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           email?: string | null
-          full_name: string
           id?: string
           idea: string
+          name: string
           preferred_size?: string | null
-          reference_image?: string | null
-          request_code: string
           status?: string
           updated_at?: string
           whatsapp?: string | null
@@ -83,127 +212,206 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           email?: string | null
-          full_name?: string
           id?: string
           idea?: string
+          name?: string
           preferred_size?: string | null
-          reference_image?: string | null
-          request_code?: string
           status?: string
           updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string
           whatsapp?: string | null
         }
         Relationships: []
       }
       notifications: {
         Row: {
-          body: string | null
           created_at: string
           id: string
-          is_read: boolean
           link: string | null
+          message: string | null
+          read: boolean
           title: string
           type: string
         }
         Insert: {
-          body?: string | null
           created_at?: string
           id?: string
-          is_read?: boolean
           link?: string | null
+          message?: string | null
+          read?: boolean
           title: string
           type?: string
         }
         Update: {
-          body?: string | null
           created_at?: string
           id?: string
-          is_read?: boolean
           link?: string | null
+          message?: string | null
+          read?: boolean
           title?: string
           type?: string
         }
         Relationships: []
       }
-      orders: {
+      order_items: {
         Row: {
-          address: string | null
-          admin_notes: string | null
-          artwork_code: string | null
+          artwork_id_snapshot: string | null
           created_at: string
-          delivery_fee: number
-          district: string | null
-          email: string | null
-          full_name: string
           id: string
-          instructions: string | null
-          landmark: string | null
-          municipality: string | null
-          order_code: string
+          order_id: string
           painting_id: string | null
-          painting_title: string
-          payment_status: string
-          phone: string
-          price: number
-          province: string | null
-          status: string
-          total: number
-          updated_at: string
-          whatsapp: string | null
+          painting_price_snapshot: number
+          painting_title_snapshot: string
         }
         Insert: {
-          address?: string | null
-          admin_notes?: string | null
-          artwork_code?: string | null
+          artwork_id_snapshot?: string | null
           created_at?: string
-          delivery_fee?: number
-          district?: string | null
-          email?: string | null
-          full_name: string
           id?: string
-          instructions?: string | null
-          landmark?: string | null
-          municipality?: string | null
-          order_code: string
+          order_id: string
           painting_id?: string | null
-          painting_title: string
-          payment_status?: string
-          phone: string
-          price?: number
-          province?: string | null
-          status?: string
-          total?: number
-          updated_at?: string
-          whatsapp?: string | null
+          painting_price_snapshot?: number
+          painting_title_snapshot: string
         }
         Update: {
-          address?: string | null
-          admin_notes?: string | null
-          artwork_code?: string | null
+          artwork_id_snapshot?: string | null
           created_at?: string
-          delivery_fee?: number
-          district?: string | null
-          email?: string | null
-          full_name?: string
           id?: string
-          instructions?: string | null
-          landmark?: string | null
-          municipality?: string | null
-          order_code?: string
+          order_id?: string
           painting_id?: string | null
-          painting_title?: string
-          payment_status?: string
-          phone?: string
-          price?: number
-          province?: string | null
-          status?: string
-          total?: number
-          updated_at?: string
-          whatsapp?: string | null
+          painting_price_snapshot?: number
+          painting_title_snapshot?: string
         }
         Relationships: [
           {
-            foreignKeyName: "orders_painting_id_fkey"
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_painting_id_fkey"
+            columns: ["painting_id"]
+            isOneToOne: false
+            referencedRelation: "paintings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address_id: string | null
+          admin_notes: string | null
+          created_at: string
+          customer_id: string | null
+          delivery_fee: number
+          id: string
+          order_number: string
+          payment_status: string
+          status: string
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          address_id?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delivery_fee?: number
+          id?: string
+          order_number: string
+          payment_status?: string
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          address_id?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          customer_id?: string | null
+          delivery_fee?: number
+          id?: string
+          order_number?: string
+          payment_status?: string
+          status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      painting_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          painting_id: string
+          sort_order: number
+          storage_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          painting_id: string
+          sort_order?: number
+          storage_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          painting_id?: string
+          sort_order?: number
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "painting_images_painting_id_fkey"
             columns: ["painting_id"]
             isOneToOne: false
             referencedRelation: "paintings"
@@ -213,103 +421,96 @@ export type Database = {
       }
       paintings: {
         Row: {
-          artwork_code: string
-          availability: string
-          category: string
+          artwork_id: string
+          category_id: string | null
           created_at: string
           description: string | null
-          dimensions: string | null
           featured: boolean
+          height: number | null
           id: string
-          images: string[]
           medium: string | null
           price: number
           sort_order: number
+          status: string
           story: string | null
           title: string
           updated_at: string
+          width: number | null
           year: number | null
         }
         Insert: {
-          artwork_code: string
-          availability?: string
-          category?: string
+          artwork_id: string
+          category_id?: string | null
           created_at?: string
           description?: string | null
-          dimensions?: string | null
           featured?: boolean
+          height?: number | null
           id?: string
-          images?: string[]
           medium?: string | null
           price?: number
           sort_order?: number
+          status?: string
           story?: string | null
           title: string
           updated_at?: string
+          width?: number | null
           year?: number | null
         }
         Update: {
-          artwork_code?: string
-          availability?: string
-          category?: string
+          artwork_id?: string
+          category_id?: string | null
           created_at?: string
           description?: string | null
-          dimensions?: string | null
           featured?: boolean
+          height?: number | null
           id?: string
-          images?: string[]
           medium?: string | null
           price?: number
           sort_order?: number
+          status?: string
           story?: string | null
           title?: string
           updated_at?: string
+          width?: number | null
           year?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "paintings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      site_settings: {
+      profiles: {
         Row: {
-          artist_bio: string | null
-          artist_name: string
-          artist_statement: string
-          contact_email: string
-          currency: string
-          delivery_fee: number
-          hero_image: string | null
-          id: number
-          instagram_username: string
-          location: string
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string | null
+          role: Database["public"]["Enums"]["app_role"]
           updated_at: string
-          whatsapp_number: string
+          user_id: string
         }
         Insert: {
-          artist_bio?: string | null
-          artist_name?: string
-          artist_statement?: string
-          contact_email?: string
-          currency?: string
-          delivery_fee?: number
-          hero_image?: string | null
-          id?: number
-          instagram_username?: string
-          location?: string
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
-          whatsapp_number?: string
+          user_id: string
         }
         Update: {
-          artist_bio?: string | null
-          artist_name?: string
-          artist_statement?: string
-          contact_email?: string
-          currency?: string
-          delivery_fee?: number
-          hero_image?: string | null
-          id?: number
-          instagram_username?: string
-          location?: string
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
-          whatsapp_number?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -340,6 +541,7 @@ export type Database = {
     }
     Functions: {
       claim_admin: { Args: never; Returns: boolean }
+      confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -348,11 +550,11 @@ export type Database = {
         Returns: boolean
       }
       track_order: {
-        Args: { _order_code: string }
+        Args: { _order_number: string }
         Returns: {
           created_at: string
-          order_code: string
-          painting_title: string
+          items: string
+          order_number: string
           payment_status: string
           status: string
           updated_at: string

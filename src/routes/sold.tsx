@@ -40,7 +40,7 @@ function SoldPage() {
         </div>
         {!isLoading && sold.length === 0 && (
           <p className="border border-dashed border-border p-16 text-center text-sm text-muted-foreground">
-            No works have been archived yet.
+            No sold works yet.
           </p>
         )}
       </Section>

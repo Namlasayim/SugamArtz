@@ -22,22 +22,31 @@ export function useSession() {
   return { session, loading };
 }
 
+/** Ensures the signed-in user has a profile row. The role column is set by the database. */
+export async function ensureProfile(userId: string, name?: string | null) {
+  const { data } = await supabase.from("profiles").select("id").eq("user_id", userId).maybeSingle();
+  if (data) return;
+  await supabase.from("profiles").insert({ user_id: userId, name: name ?? null } as never);
+}
+
 export function useIsAdmin(userId?: string) {
   return useQuery({
     queryKey: ["is-admin", userId],
     enabled: Boolean(userId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("user_roles")
+        .from("profiles")
         .select("role")
         .eq("user_id", userId!)
-        .eq("role", "admin")
         .maybeSingle();
       if (error) throw error;
-      return Boolean(data);
+      return (data as { role?: string } | null)?.role === "admin";
     },
   });
 }
+
+const ORDER_SELECT =
+  "*, customers(id, name, email, phone, whatsapp), addresses(province, district, municipality, address, landmark, instructions), order_items(id, painting_id, painting_title_snapshot, painting_price_snapshot, artwork_id_snapshot)";
 
 export function useOrders() {
   return useQuery({
@@ -45,7 +54,7 @@ export function useOrders() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select(ORDER_SELECT)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Order[];
@@ -59,7 +68,7 @@ export function useCustomRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("custom_requests")
-        .select("*")
+        .select("*, custom_request_images(id, storage_path, image_url)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as CustomRequest[];
@@ -89,7 +98,7 @@ export function useNotifications() {
         .from("notifications")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(30);
+        .limit(50);
       if (error) throw error;
       return (data ?? []) as unknown as AppNotification[];
     },
@@ -99,4 +108,18 @@ export function useNotifications() {
 export function useRefresh() {
   const qc = useQueryClient();
   return (keys: string[]) => keys.forEach((k) => void qc.invalidateQueries({ queryKey: [k] }));
+}
+
+export async function markNotificationRead(id: string) {
+  await supabase.from("notifications").update({ read: true } as never).eq("id", id);
+}
+
+export async function markAllNotificationsRead() {
+  await supabase.from("notifications").update({ read: true } as never).eq("read", false);
+}
+
+/** Payment is verified manually by the artist; the database performs the paid → confirmed → sold cascade. */
+export async function confirmPayment(orderId: string) {
+  const { error } = await supabase.rpc("confirm_order_payment", { _order_id: orderId });
+  if (error) throw error;
 }

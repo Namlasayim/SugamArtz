@@ -1,36 +1,57 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { signedUrl } from "./storage";
 import type { SiteSettings } from "./types";
 
-export const FALLBACK_SETTINGS: SiteSettings = {
+export const ARTIST_BUCKET = "artist-assets";
+
+/** Neutral placeholders — never a fabricated artist. Real values come from admin settings. */
+export const EMPTY_SETTINGS: SiteSettings = {
   id: 1,
-  artist_name: "Aarati Shrestha",
-  artist_statement: "Painting the light, silence and colour of the Himalaya.",
+  artist_name: "The Studio",
+  artist_statement: "",
   artist_bio: null,
-  hero_image: "/artwork/dawn-over-annapurna.jpg",
-  whatsapp_number: "9779800000000",
-  instagram_username: "artist",
-  contact_email: "hello@example.com",
-  location: "Kathmandu, Nepal",
-  delivery_fee: 500,
+  hero_image: null,
+  whatsapp_number: "",
+  instagram_username: "",
+  contact_email: "",
+  location: "",
+  delivery_fee: 0,
   currency: "NPR",
 };
 
 export function useSettings() {
   const query = useQuery({
-    queryKey: ["site-settings"],
+    queryKey: ["artist-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("site_settings")
+        .from("artist_settings")
         .select("*")
         .eq("id", 1)
         .maybeSingle();
       if (error) throw error;
-      return (data as unknown as SiteSettings) ?? FALLBACK_SETTINGS;
+      if (!data) return EMPTY_SETTINGS;
+      const row = data as Record<string, unknown>;
+      const image = (row["profile_image_url"] as string | null) ?? null;
+      const heroImage = image && !image.startsWith("http") ? await signedUrl(ARTIST_BUCKET, image) : image;
+      const bio = (row["bio"] as string | null) ?? null;
+      return {
+        id: 1,
+        artist_name: (row["artist_name"] as string) || EMPTY_SETTINGS.artist_name,
+        artist_statement: bio ? bio.split("\n")[0]!.slice(0, 180) : "",
+        artist_bio: bio,
+        hero_image: heroImage,
+        whatsapp_number: (row["whatsapp_number"] as string) ?? "",
+        instagram_username: (row["instagram_username"] as string) ?? "",
+        contact_email: (row["email"] as string) ?? "",
+        location: (row["location"] as string) ?? "",
+        delivery_fee: Number(row["delivery_fee"] ?? 0),
+        currency: "NPR",
+      } satisfies SiteSettings;
     },
     staleTime: 5 * 60 * 1000,
   });
-  return { settings: query.data ?? FALLBACK_SETTINGS, isLoading: query.isLoading };
+  return { settings: query.data ?? EMPTY_SETTINGS, isLoading: query.isLoading };
 }
 
 export function whatsappLink(number: string, message?: string) {

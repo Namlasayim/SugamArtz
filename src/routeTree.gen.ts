@@ -20,6 +20,7 @@ import { Route as SoldRouteImport } from './routes/sold'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as PaintingIdRouteImport } from './routes/painting.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminMessagesRouteImport } from './routes/_authenticated/admin.messages'
@@ -82,6 +83,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PaintingIdRoute = PaintingIdRouteImport.update({
   id: '/painting/$id',
   path: '/painting/$id',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
   '/painting/$id': typeof PaintingIdRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/sold': typeof SoldRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
+  '/admin/login': typeof AdminLoginRoute
   '/painting/$id': typeof PaintingIdRoute
   '/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
   '/painting/$id': typeof PaintingIdRoute
   '/_authenticated/admin/messages': typeof AuthenticatedAdminMessagesRoute
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/track-order'
     | '/wishlist'
     | '/admin'
+    | '/admin/login'
     | '/painting/$id'
     | '/admin/messages'
     | '/admin/orders'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/sold'
     | '/track-order'
     | '/wishlist'
+    | '/admin/login'
     | '/painting/$id'
     | '/admin/messages'
     | '/admin/orders'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/track-order'
     | '/wishlist'
     | '/_authenticated/admin'
+    | '/admin/login'
     | '/painting/$id'
     | '/_authenticated/admin/messages'
     | '/_authenticated/admin/orders'
@@ -252,6 +264,7 @@ export interface RootRouteChildren {
   SoldRoute: typeof SoldRoute
   TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   PaintingIdRoute: typeof PaintingIdRoute
 }
 
@@ -333,6 +346,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/painting/$id': {
       id: '/painting/$id'
@@ -429,6 +449,7 @@ const rootRouteChildren: RootRouteChildren = {
   SoldRoute: SoldRoute,
   TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
+  AdminLoginRoute: AdminLoginRoute,
   PaintingIdRoute: PaintingIdRoute,
 }
 export const routeTree = rootRouteImport

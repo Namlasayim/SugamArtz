@@ -1,15 +1,15 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Heart, MessageCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { Section } from "@/components/site/Section";
 import { PaintingCard } from "@/components/site/PaintingCard";
-import { usePainting, usePaintings, paintingImage } from "@/lib/paintings";
+import { usePainting, usePaintings } from "@/lib/paintings";
 import { useSettings, whatsappLink } from "@/lib/site";
 import { useWishlist } from "@/lib/wishlist";
-import { formatPrice, generateCode } from "@/lib/format";
-import { supabase } from "@/integrations/supabase/client";
+import { formatPrice } from "@/lib/format";
+import { copyToClipboard, placeOrder, type OrderCustomerInput } from "@/lib/orders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,7 +62,7 @@ function PaintingPage() {
     );
   }
 
-  const images = painting.images?.length ? painting.images : [paintingImage(painting)];
+  const images = painting.images ?? [];
   const isSold = painting.availability === "sold";
   const related = all
     .filter((p) => p.id !== painting.id && p.category === painting.category)
@@ -82,11 +82,17 @@ function PaintingPage() {
         <div className="mt-8 grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
           <div>
             <div className="relative bg-canvas">
-              <img
-                src={images[active] ?? images[0]}
-                alt={`${painting.title} — ${painting.medium ?? "original painting"}`}
-                className="w-full object-contain"
-              />
+              {images.length > 0 ? (
+                <img
+                  src={images[active] ?? images[0]}
+                  alt={`${painting.title} — ${painting.medium ?? "original painting"}`}
+                  className="w-full object-contain"
+                />
+              ) : (
+                <div className="flex aspect-4/5 w-full items-center justify-center border border-dashed border-border">
+                  <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Image coming soon</p>
+                </div>
+              )}
               {isSold && (
                 <span className="absolute top-4 left-4 bg-ink px-3 py-1 text-[0.6875rem] tracking-[0.2em] text-background uppercase">
                   Sold
@@ -207,9 +213,9 @@ type Painting = NonNullable<ReturnType<typeof usePainting>["data"]>;
 
 function OrderDialog({ painting }: { painting: Painting }) {
   const { settings } = useSettings();
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [placed, setPlaced] = useState<{ orderNumber: string; message: string; copied: boolean } | null>(null);
 
   const price = Number(painting.price);
   const fee = Number(settings.delivery_fee);
@@ -219,64 +225,51 @@ function OrderDialog({ painting }: { painting: Painting }) {
     const form = new FormData(e.currentTarget);
     const get = (k: string) => String(form.get(k) ?? "").trim();
 
-    const full_name = get("full_name");
-    const phone = get("phone");
-    const address = get("address");
-    if (full_name.length < 2 || phone.length < 7 || address.length < 4) {
+    const input: OrderCustomerInput = {
+      name: get("full_name"),
+      phone: get("phone"),
+      whatsapp: get("whatsapp") || get("phone"),
+      email: get("email"),
+      province: get("province"),
+      district: get("district"),
+      municipality: get("municipality"),
+      address: get("address"),
+      landmark: get("landmark"),
+      instructions: get("instructions"),
+    };
+
+    if (input.name.length < 2 || input.phone.length < 7 || input.address.length < 4) {
       toast.error("Please fill in your name, phone and full address.");
       return;
     }
 
     setSaving(true);
-    const order_code = generateCode("ORD");
-    const { error } = await supabase.from("orders").insert({
-      order_code,
-      painting_id: painting.id,
-      painting_title: painting.title,
-      artwork_code: painting.artwork_code,
-      full_name,
-      phone,
-      whatsapp: get("whatsapp") || phone,
-      email: get("email") || null,
-      province: get("province") || null,
-      district: get("district") || null,
-      municipality: get("municipality") || null,
-      address,
-      landmark: get("landmark") || null,
-      instructions: get("instructions") || null,
-      price,
-      delivery_fee: fee,
-      total: price + fee,
-    } as never);
-    setSaving(false);
-
-    if (error) {
+    try {
+      const result = await placeOrder(painting, input, fee);
+      const copied = await copyToClipboard(result.message);
+      setPlaced({ ...result, copied });
+      toast.success("Order request sent.");
+      if (copied) {
+        window.open(
+          whatsappLink(settings.whatsapp_number, result.message),
+          "_blank",
+          "noopener",
+        );
+      }
+    } catch {
       toast.error("Could not place the order. Please try again.");
-      return;
+    } finally {
+      setSaving(false);
     }
+  }
 
-    const message = [
-      `Namaste! I'd like to order a painting.`,
-      ``,
-      `Order: ${order_code}`,
-      `Painting: ${painting.title} (${painting.artwork_code})`,
-      `Price: ${formatPrice(price, settings.currency)}`,
-      `Delivery: ${formatPrice(fee, settings.currency)}`,
-      `Total: ${formatPrice(price + fee, settings.currency)}`,
-      ``,
-      `Name: ${full_name}`,
-      `Phone: ${phone}`,
-      `Address: ${address}${get("district") ? `, ${get("district")}` : ""}`,
-    ].join("\n");
-
-    window.open(whatsappLink(settings.whatsapp_number, message), "_blank", "noopener");
-    setOpen(false);
-    toast.success(`Order ${order_code} created — continue on WhatsApp.`);
-    navigate({ to: "/track-order", search: { code: order_code } });
+  function reset(next: boolean) {
+    setOpen(next);
+    if (!next) setPlaced(null);
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={reset}>
       <DialogTrigger asChild>
         <Button size="lg" className="rounded-none px-8 tracking-[0.12em] uppercase">
           Order this painting
@@ -284,50 +277,97 @@ function OrderDialog({ painting }: { painting: Painting }) {
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto rounded-none sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Order “{painting.title}”</DialogTitle>
+          <DialogTitle className="font-display text-2xl">
+            {placed ? "Order request sent" : `Order \u201C${painting.title}\u201D`}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          <Field name="full_name" label="Full name" required />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="phone" label="Phone" type="tel" required />
-            <Field name="whatsapp" label="WhatsApp (if different)" type="tel" />
-          </div>
-          <Field name="email" label="Email" type="email" />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="province" label="Province" />
-            <Field name="district" label="District" />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="municipality" label="Municipality / City" />
-            <Field name="landmark" label="Landmark" />
-          </div>
-          <Field name="address" label="Full address" required />
-          <div className="space-y-2">
-            <Label htmlFor="instructions" className="eyebrow">
-              Delivery instructions
-            </Label>
-            <Textarea id="instructions" name="instructions" rows={3} maxLength={500} className="rounded-none" />
-          </div>
 
-          <div className="space-y-1 border-y border-border py-4 text-sm">
-            <Row label="Painting" value={formatPrice(price, settings.currency)} />
-            <Row label="Delivery" value={formatPrice(fee, settings.currency)} />
-            <Row label="Total" value={formatPrice(price + fee, settings.currency)} strong />
+        {placed ? (
+          <div className="space-y-5">
+            <p className="text-sm text-muted-foreground">
+              The artist will contact you on WhatsApp to confirm payment and delivery.
+            </p>
+            <p className="border border-border p-4 text-sm">
+              Order number <span className="font-display text-lg">{placed.orderNumber}</span>
+              <br />
+              <Link to="/track-order" search={{ code: placed.orderNumber }} className="border-b border-foreground/30 text-xs tracking-[0.12em] uppercase">
+                Track this order
+              </Link>
+            </p>
+            <div>
+              <p className="eyebrow">
+                {placed.copied ? "Message copied to your clipboard" : "Copy this message to the artist"}
+              </p>
+              <pre className="mt-3 max-h-56 overflow-auto border border-border bg-canvas p-4 text-xs whitespace-pre-wrap">
+                {placed.message}
+              </pre>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="outline"
+                className="rounded-none tracking-[0.12em] uppercase"
+                onClick={async () => {
+                  const ok = await copyToClipboard(placed.message);
+                  toast[ok ? "success" : "error"](ok ? "Copied." : "Please copy the message manually.");
+                }}
+              >
+                Copy message
+              </Button>
+              <Button asChild className="rounded-none tracking-[0.12em] uppercase">
+                <a
+                  href={whatsappLink(settings.whatsapp_number, placed.message)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} /> Open WhatsApp
+                </a>
+              </Button>
+            </div>
           </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <Field name="full_name" label="Full name" required />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field name="phone" label="Phone" type="tel" required />
+              <Field name="whatsapp" label="WhatsApp (if different)" type="tel" />
+            </div>
+            <Field name="email" label="Email" type="email" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field name="province" label="Province" />
+              <Field name="district" label="District" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field name="municipality" label="Municipality / City" />
+              <Field name="landmark" label="Landmark" />
+            </div>
+            <Field name="address" label="Full address" required />
+            <div className="space-y-2">
+              <Label htmlFor="instructions" className="eyebrow">
+                Delivery instructions
+              </Label>
+              <Textarea id="instructions" name="instructions" rows={3} maxLength={500} className="rounded-none" />
+            </div>
 
-          <Button
-            type="submit"
-            size="lg"
-            disabled={saving}
-            className="w-full rounded-none tracking-[0.12em] uppercase"
-          >
-            <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} />
-            {saving ? "Placing order…" : "Confirm & continue on WhatsApp"}
-          </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            No online payment. The artist confirms payment and delivery with you personally.
-          </p>
-        </form>
+            <div className="space-y-1 border-y border-border py-4 text-sm">
+              <Row label="Painting" value={formatPrice(price, settings.currency)} />
+              <Row label="Delivery" value={formatPrice(fee, settings.currency)} />
+              <Row label="Total" value={formatPrice(price + fee, settings.currency)} strong />
+            </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              disabled={saving}
+              className="w-full rounded-none tracking-[0.12em] uppercase"
+            >
+              <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} />
+              {saving ? "Sending request\u2026" : "Send order request"}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              No online payment. The artist confirms payment and delivery with you personally.
+            </p>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
