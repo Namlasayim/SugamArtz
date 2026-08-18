@@ -18,14 +18,14 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminLayout,
 });
 
-const NAV = [
+const NAV: { to: string; label: string; exact?: boolean }[] = [
   { to: "/admin", label: "Overview", exact: true },
   { to: "/admin/paintings", label: "Paintings" },
   { to: "/admin/orders", label: "Orders" },
   { to: "/admin/requests", label: "Commissions" },
   { to: "/admin/messages", label: "Messages" },
   { to: "/admin/settings", label: "Settings" },
-] as const;
+];
 
 function AdminLayout() {
   const { user } = Route.useRouteContext();
