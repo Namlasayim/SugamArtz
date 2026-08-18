@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/admin/settings")({
 });
 
 function AdminSettings() {
-  const { settings } = useSettings();
+  const { settings, isLoading } = useSettings();
   const refresh = useRefresh();
   const [saving, setSaving] = useState(false);
 
@@ -48,15 +48,28 @@ function AdminSettings() {
     };
     if (profileImagePath) payload["profile_image_url"] = profileImagePath;
 
-    const { error } = await supabase.from("artist_settings").upsert(payload as never);
+    const { data: saved, error } = await supabase
+      .from("artist_settings")
+      .upsert(payload as never)
+      .select("artist_name, delivery_fee")
+      .maybeSingle();
     setSaving(false);
 
-    if (error) {
-      toast.error("Could not save settings.");
+    if (error || !saved) {
+      toast.error(error?.message ?? "Could not save settings.");
       return;
     }
     toast.success("Settings saved.");
     refresh(["artist-settings"]);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="font-display text-3xl">Studio settings</h1>
+        <p className="text-sm text-muted-foreground">Loading saved settings…</p>
+      </div>
+    );
   }
 
   return (
