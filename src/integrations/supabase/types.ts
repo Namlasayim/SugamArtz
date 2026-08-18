@@ -576,6 +576,18 @@ export type Database = {
           order_number: string
         }[]
       }
+      submit_custom_request: {
+        Args: {
+          _budget: string
+          _deadline: string
+          _email: string
+          _idea: string
+          _name: string
+          _preferred_size: string
+          _whatsapp: string
+        }
+        Returns: string
+      }
       track_order: {
         Args: { _order_number: string }
         Returns: {
