@@ -1,0 +1,1 @@
+ALTER TABLE public.painting_images ALTER COLUMN image_url DROP NOT NULL;
