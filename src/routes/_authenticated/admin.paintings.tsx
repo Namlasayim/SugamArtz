@@ -185,11 +185,11 @@ function PaintingDialog({
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field name="title" label="Title" defaultValue={painting?.title} required />
-            <Field name="price" label="Price (NPR)" type="number" defaultValue={painting?.price} required />
+            <Field name="title" label="Title" defaultValue={painting?.title ?? ""} required />
+            <Field name="price" label="Price (NPR)" type="number" defaultValue={painting?.price ?? ""} required />
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field name="category" label="Category" defaultValue={painting?.category} />
+            <Field name="category" label="Category" defaultValue={painting?.category ?? ""} />
             <Field name="medium" label="Medium" defaultValue={painting?.medium ?? ""} />
             <Field name="dimensions" label="Dimensions" defaultValue={painting?.dimensions ?? ""} />
           </div>
