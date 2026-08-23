@@ -11,7 +11,9 @@ export function Section({
   bleed?: boolean;
 }) {
   return (
-    <section className={cn("mx-auto w-full px-5 lg:px-10", bleed ? "max-w-none" : "max-w-7xl", className)}>
+    <section
+      className={cn("mx-auto w-full px-5 lg:px-10", bleed ? "max-w-none" : "max-w-7xl", className)}
+    >
       {children}
     </section>
   );

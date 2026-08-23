@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
+    "admin:bootstrap": "node scripts/bootstrap-admin.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

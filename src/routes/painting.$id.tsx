@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Heart, MessageCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -9,12 +9,23 @@ import { usePainting, usePaintings } from "@/lib/paintings";
 import { useSettings, whatsappLink } from "@/lib/site";
 import { useWishlist } from "@/lib/wishlist";
 import { formatPrice } from "@/lib/format";
-import { copyToClipboard, placeOrder, type OrderCustomerInput } from "@/lib/orders";
+import {
+  copyToClipboard,
+  placeOrder,
+  saveOrderConfirmation,
+  type OrderCustomerInput,
+} from "@/lib/orders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/painting/$id")({
@@ -27,7 +38,10 @@ export const Route = createFileRoute("/painting/$id")({
           "View this original painting in detail: medium, dimensions, the story behind it, and how to order it directly from the artist.",
       },
       { property: "og:title", content: "Painting — Original Artwork from the Studio" },
-      { property: "og:description", content: "An original painting available directly from the artist." },
+      {
+        property: "og:description",
+        content: "An original painting available directly from the artist.",
+      },
     ],
   }),
   component: PaintingPage,
@@ -40,11 +54,14 @@ function PaintingPage() {
   const { settings } = useSettings();
   const { has, toggle } = useWishlist();
   const [active, setActive] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   if (isLoading) {
     return (
       <SiteShell>
-        <Section className="py-32 text-center text-sm text-muted-foreground">Loading painting…</Section>
+        <Section className="py-32 text-center text-sm text-muted-foreground">
+          Loading painting…
+        </Section>
       </SiteShell>
     );
   }
@@ -68,6 +85,10 @@ function PaintingPage() {
     .filter((p) => p.id !== painting.id && p.category === painting.category)
     .slice(0, 3);
   const saved = has(painting.id);
+  const artistQuestionLink = whatsappLink(
+    settings.whatsapp_number,
+    `Hello, I'd like to ask about "${painting.title}" (${painting.artwork_code}).`,
+  );
 
   return (
     <SiteShell>
@@ -83,14 +104,23 @@ function PaintingPage() {
           <div>
             <div className="relative bg-canvas">
               {images.length > 0 ? (
-                <img
-                  src={images[active] ?? images[0]}
-                  alt={`${painting.title} — ${painting.medium ?? "original painting"}`}
-                  className="w-full object-contain"
-                />
+                <button
+                  type="button"
+                  onClick={() => setZoomOpen(true)}
+                  className="block w-full cursor-zoom-in focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  aria-label={`Zoom ${painting.title}`}
+                >
+                  <img
+                    src={images[active] ?? images[0]}
+                    alt={`${painting.title} — ${painting.medium ?? "original painting"}`}
+                    className="w-full object-contain"
+                  />
+                </button>
               ) : (
                 <div className="flex aspect-4/5 w-full items-center justify-center border border-dashed border-border">
-                  <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Image coming soon</p>
+                  <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                    Image coming soon
+                  </p>
                 </div>
               )}
               {isSold && (
@@ -99,6 +129,20 @@ function PaintingPage() {
                 </span>
               )}
             </div>
+            {images.length > 0 && (
+              <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+                <DialogContent className="max-h-[95vh] rounded-none border-0 bg-ink/95 p-3 sm:max-w-5xl">
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>{painting.title} enlarged image</DialogTitle>
+                  </DialogHeader>
+                  <img
+                    src={images[active] ?? images[0]}
+                    alt={`${painting.title} enlarged`}
+                    className="max-h-[88vh] w-full object-contain"
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
             {images.length > 1 && (
               <div className="mt-4 flex gap-3">
                 {images.map((src, i) => (
@@ -108,7 +152,9 @@ function PaintingPage() {
                     aria-label={`View image ${i + 1}`}
                     className={cn(
                       "h-20 w-20 overflow-hidden border transition-opacity",
-                      i === active ? "border-foreground" : "border-transparent opacity-60 hover:opacity-100",
+                      i === active
+                        ? "border-foreground"
+                        : "border-transparent opacity-60 hover:opacity-100",
                     )}
                   >
                     <img src={src} alt="" className="h-full w-full object-cover" />
@@ -120,7 +166,9 @@ function PaintingPage() {
 
           <div>
             <p className="eyebrow">{painting.category}</p>
-            <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">{painting.title}</h1>
+            <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
+              {painting.title}
+            </h1>
             <p className="mt-4 font-display text-2xl text-clay">
               {formatPrice(Number(painting.price), settings.currency)}
             </p>
@@ -133,12 +181,16 @@ function PaintingPage() {
             </dl>
 
             {painting.description && (
-              <p className="mt-6 text-base leading-relaxed text-muted-foreground">{painting.description}</p>
+              <p className="mt-6 text-base leading-relaxed text-muted-foreground">
+                {painting.description}
+              </p>
             )}
             {painting.story && (
               <div className="mt-6 border-l-2 border-gold pl-5">
                 <p className="eyebrow">Story behind the work</p>
-                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{painting.story}</p>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  {painting.story}
+                </p>
               </div>
             )}
 
@@ -156,31 +208,29 @@ function PaintingPage() {
                 onClick={() => toggle(painting.id)}
                 className="rounded-none border-foreground/25 tracking-[0.12em] uppercase"
               >
-                <Heart className={cn("mr-2 h-4 w-4", saved && "fill-clay text-clay")} strokeWidth={1.5} />
+                <Heart
+                  className={cn("mr-2 h-4 w-4", saved && "fill-clay text-clay")}
+                  strokeWidth={1.5}
+                />
                 {saved ? "Saved" : "Save"}
               </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="rounded-none border-foreground/25 tracking-[0.12em] uppercase"
-              >
-                <a
-                  href={whatsappLink(
-                    settings.whatsapp_number,
-                    `Hello, I'd like to ask about "${painting.title}" (${painting.artwork_code}).`,
-                  )}
-                  target="_blank"
-                  rel="noreferrer"
+              {artistQuestionLink && (
+                <Button
+                  asChild
+                  size="lg"
+                  variant="outline"
+                  className="rounded-none border-foreground/25 tracking-[0.12em] uppercase"
                 >
-                  <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} /> Ask
-                </a>
-              </Button>
+                  <a href={artistQuestionLink} target="_blank" rel="noreferrer">
+                    <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} /> Ask
+                  </a>
+                </Button>
+              )}
             </div>
 
             <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-              Delivery across Nepal {formatPrice(Number(settings.delivery_fee), settings.currency)} · Payment
-              confirmed personally with the artist over WhatsApp.
+              Delivery across Nepal {formatPrice(Number(settings.delivery_fee), settings.currency)}{" "}
+              · Payment confirmed personally with the artist over WhatsApp.
             </p>
           </div>
         </div>
@@ -213,9 +263,14 @@ type Painting = NonNullable<ReturnType<typeof usePainting>["data"]>;
 
 function OrderDialog({ painting }: { painting: Painting }) {
   const { settings } = useSettings();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [placed, setPlaced] = useState<{ orderNumber: string; message: string; copied: boolean } | null>(null);
+  const [placed, setPlaced] = useState<{
+    orderNumber: string;
+    message: string;
+    copied: boolean;
+  } | null>(null);
 
   const price = Number(painting.price);
   const fee = Number(settings.delivery_fee);
@@ -243,20 +298,35 @@ function OrderDialog({ painting }: { painting: Painting }) {
       return;
     }
 
+    const whatsappWindow = whatsappLink(settings.whatsapp_number)
+      ? window.open("about:blank", "_blank")
+      : null;
     setSaving(true);
     try {
       const result = await placeOrder(painting, input, fee);
       const copied = await copyToClipboard(result.message);
+      const persisted = saveOrderConfirmation({
+        orderNumber: result.orderNumber,
+        paintingTitle: painting.title,
+        message: result.message,
+        copied,
+      });
       setPlaced({ ...result, copied });
       toast.success("Order request sent.");
-      if (copied) {
-        window.open(
-          whatsappLink(settings.whatsapp_number, result.message),
-          "_blank",
-          "noopener",
-        );
+      const messageLink = whatsappLink(settings.whatsapp_number, result.message);
+      if (whatsappWindow && messageLink) {
+        whatsappWindow.location.href = messageLink;
+      } else if (whatsappWindow) {
+        whatsappWindow.close();
+      }
+      if (persisted) {
+        void navigate({
+          to: "/order-confirmation" as string,
+          search: { code: result.orderNumber },
+        });
       }
     } catch {
+      whatsappWindow?.close();
       toast.error("Could not place the order. Please try again.");
     } finally {
       setSaving(false);
@@ -267,6 +337,8 @@ function OrderDialog({ painting }: { painting: Painting }) {
     setOpen(next);
     if (!next) setPlaced(null);
   }
+
+  const placedWhatsAppLink = placed ? whatsappLink(settings.whatsapp_number, placed.message) : null;
 
   return (
     <Dialog open={open} onOpenChange={reset}>
@@ -290,13 +362,19 @@ function OrderDialog({ painting }: { painting: Painting }) {
             <p className="border border-border p-4 text-sm">
               Order number <span className="font-display text-lg">{placed.orderNumber}</span>
               <br />
-              <Link to="/track-order" search={{ code: placed.orderNumber }} className="border-b border-foreground/30 text-xs tracking-[0.12em] uppercase">
+              <Link
+                to="/track-order"
+                search={{ code: placed.orderNumber }}
+                className="border-b border-foreground/30 text-xs tracking-[0.12em] uppercase"
+              >
                 Track this order
               </Link>
             </p>
             <div>
               <p className="eyebrow">
-                {placed.copied ? "Message copied to your clipboard" : "Copy this message to the artist"}
+                {placed.copied
+                  ? "Message copied to your clipboard"
+                  : "Copy this message to the artist"}
               </p>
               <pre className="mt-3 max-h-56 overflow-auto border border-border bg-canvas p-4 text-xs whitespace-pre-wrap">
                 {placed.message}
@@ -308,20 +386,20 @@ function OrderDialog({ painting }: { painting: Painting }) {
                 className="rounded-none tracking-[0.12em] uppercase"
                 onClick={async () => {
                   const ok = await copyToClipboard(placed.message);
-                  toast[ok ? "success" : "error"](ok ? "Copied." : "Please copy the message manually.");
+                  toast[ok ? "success" : "error"](
+                    ok ? "Copied." : "Please copy the message manually.",
+                  );
                 }}
               >
                 Copy message
               </Button>
-              <Button asChild className="rounded-none tracking-[0.12em] uppercase">
-                <a
-                  href={whatsappLink(settings.whatsapp_number, placed.message)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} /> Open WhatsApp
-                </a>
-              </Button>
+              {placedWhatsAppLink && (
+                <Button asChild className="rounded-none tracking-[0.12em] uppercase">
+                  <a href={placedWhatsAppLink} target="_blank" rel="noreferrer">
+                    <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} /> Open WhatsApp
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
         ) : (
@@ -345,7 +423,13 @@ function OrderDialog({ painting }: { painting: Painting }) {
               <Label htmlFor="instructions" className="eyebrow">
                 Delivery instructions
               </Label>
-              <Textarea id="instructions" name="instructions" rows={3} maxLength={500} className="rounded-none" />
+              <Textarea
+                id="instructions"
+                name="instructions"
+                rows={3}
+                maxLength={500}
+                className="rounded-none"
+              />
             </div>
 
             <div className="space-y-1 border-y border-border py-4 text-sm">
@@ -390,7 +474,14 @@ function Field({
         {label}
         {required ? " *" : ""}
       </Label>
-      <Input id={name} name={name} type={type} required={required} maxLength={200} className="rounded-none" />
+      <Input
+        id={name}
+        name={name}
+        type={type}
+        required={required}
+        maxLength={200}
+        className="rounded-none"
+      />
     </div>
   );
 }

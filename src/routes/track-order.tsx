@@ -18,7 +18,7 @@ type TrackedOrder = {
   payment_status: string;
   created_at: string;
   updated_at: string;
-}
+};
 
 export const Route = createFileRoute("/track-order")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -48,7 +48,11 @@ function TrackPage() {
 
   async function lookup(raw: string) {
     const trimmed = raw.trim();
-    if (trimmed.length < 4) return;
+    if (trimmed.length < 4 || trimmed.length > 80) {
+      setOrder(null);
+      setState("missing");
+      return;
+    }
     setState("loading");
     const { data, error } = await supabase.rpc("track_order", { _order_number: trimmed });
     const row = (data as TrackedOrder[] | null)?.[0] ?? null;
@@ -62,12 +66,16 @@ function TrackPage() {
   }
 
   useEffect(() => {
+    setValue(code ?? "");
+    setOrder(null);
+    setState(code ? "loading" : "idle");
     if (code) void lookup(code);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
   const cancelled = order?.status === "cancelled";
-  const currentIndex = order ? ORDER_STAGES.indexOf(order.status as (typeof ORDER_STAGES)[number]) : -1;
+  const currentIndex = order
+    ? ORDER_STAGES.indexOf(order.status as (typeof ORDER_STAGES)[number])
+    : -1;
 
   return (
     <SiteShell>
@@ -75,7 +83,8 @@ function TrackPage() {
         <p className="eyebrow">Order status</p>
         <h1 className="mt-4 font-display text-4xl sm:text-5xl">Track your order</h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Enter the order code you received when you placed your order (it looks like ART-ORDER-2026-0001).
+          Enter the order code you received when you placed your order (it looks like
+          ART-ORDER-2026-A1B2C3D4E5F6).
         </p>
 
         <form
@@ -88,7 +97,7 @@ function TrackPage() {
           <Input
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="ART-ORDER-2026-0001"
+            placeholder="ART-ORDER-2026-A1B2C3D4E5F6"
             aria-label="Order code"
             className="rounded-none uppercase"
           />
@@ -97,20 +106,27 @@ function TrackPage() {
           </Button>
         </form>
 
-        {state === "loading" && <p className="mt-8 text-sm text-muted-foreground">Looking up your order…</p>}
+        {state === "loading" && (
+          <p className="mt-8 text-sm text-muted-foreground">Looking up your order…</p>
+        )}
 
         {state === "missing" && (
           <div className="mt-8 max-w-md border border-dashed border-border p-8">
             <p className="text-sm text-muted-foreground">
-              No order found with that code. Check the spelling, or message the artist on{" "}
-              <a
-                href={whatsappLink(settings.whatsapp_number)}
-                target="_blank"
-                rel="noreferrer"
-                className="border-b border-foreground/30"
-              >
-                WhatsApp
-              </a>
+              No order found with that code. Check the spelling
+              {whatsappLink(settings.whatsapp_number) && (
+                <>
+                  , or message the artist on{" "}
+                  <a
+                    href={whatsappLink(settings.whatsapp_number)!}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="border-b border-foreground/30"
+                  >
+                    WhatsApp
+                  </a>
+                </>
+              )}
               .
             </p>
           </div>
@@ -128,7 +144,9 @@ function TrackPage() {
 
             <p className="mt-6 text-sm">
               <span className="text-muted-foreground">Payment:</span>{" "}
-              <span>{order.payment_status === "paid" ? "Payment confirmed" : "Payment pending"}</span>
+              <span>
+                {order.payment_status === "paid" ? "Payment confirmed" : "Payment pending"}
+              </span>
             </p>
 
             {cancelled ? (
@@ -144,7 +162,9 @@ function TrackPage() {
                       <span
                         className={cn(
                           "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border",
-                          reached ? "border-clay bg-clay text-background" : "border-border text-transparent",
+                          reached
+                            ? "border-clay bg-clay text-background"
+                            : "border-border text-transparent",
                         )}
                       >
                         <Check className="h-3.5 w-3.5" strokeWidth={2} />

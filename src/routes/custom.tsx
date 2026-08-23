@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { Instagram, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { Section } from "@/components/site/Section";
-import { useSettings, whatsappLink } from "@/lib/site";
+import { instagramLink, useSettings, whatsappLink } from "@/lib/site";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadFile } from "@/lib/storage";
+import { imageUploadError, removeFile, uploadFile } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,10 +32,22 @@ export const Route = createFileRoute("/custom")({
 });
 
 const STEPS = [
-  { title: "Share your idea", text: "Tell the artist the subject, mood, size and budget you have in mind." },
-  { title: "Sketch & quote", text: "You receive a rough sketch, a firm price and a timeline over WhatsApp." },
-  { title: "Painting begins", text: "Progress photos are sent at the underpainting and final-layer stages." },
-  { title: "Delivery", text: "The signed canvas is varnished, packed and shipped to your address." },
+  {
+    title: "Share your idea",
+    text: "Tell the artist the subject, mood, size and budget you have in mind.",
+  },
+  {
+    title: "Sketch & quote",
+    text: "You receive a rough sketch, a firm price and a timeline over WhatsApp.",
+  },
+  {
+    title: "Painting begins",
+    text: "Progress photos are sent at the underpainting and final-layer stages.",
+  },
+  {
+    title: "Delivery",
+    text: "The signed canvas is varnished, packed and shipped to your address.",
+  },
 ];
 
 function CustomPage() {
@@ -43,26 +55,19 @@ function CustomPage() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<string | null>(null);
   const [waLink, setWaLink] = useState<string | null>(null);
-
-  const MAX_BYTES = 15 * 1024 * 1024;
-  function checkFile(file: File) {
-    const name = file.name.toLowerCase();
-    const okType =
-      (file.type && file.type.startsWith("image/")) ||
-      /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif)$/.test(name);
-    if (!okType) return "Please choose an image file (JPG, PNG, WEBP or HEIC).";
-    if (file.size > MAX_BYTES) return "That image is larger than 15 MB. Please choose a smaller photo.";
-    return null;
-  }
+  const artistWhatsApp = whatsappLink(settings.whatsapp_number);
+  const artistInstagram = instagramLink(settings.instagram_username);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
     const get = (k: string) => String(form.get(k) ?? "").trim();
 
     const name = get("full_name");
     const idea = get("idea");
     const whatsapp = get("whatsapp");
+    if (get("website")) return;
     if (name.length < 2 || idea.length < 10 || whatsapp.length < 7) {
       toast.error("Please add your name, WhatsApp number and a short description of your idea.");
       return;
@@ -70,7 +75,7 @@ function CustomPage() {
 
     const picked = form.get("reference_image");
     if (picked instanceof File && picked.size > 0) {
-      const problem = checkFile(picked);
+      const problem = imageUploadError(picked);
       if (problem) {
         toast.error(problem);
         return;
@@ -86,6 +91,7 @@ function CustomPage() {
       _preferred_size: get("preferred_size") || null,
       _budget: get("budget") || null,
       _deadline: get("deadline") || null,
+      _website: get("website"),
     } as never);
 
     if (error || !data) {
@@ -96,23 +102,35 @@ function CustomPage() {
 
     const requestId = data as unknown as string;
     const file = picked;
+    let imageWarning = false;
     if (file instanceof File && file.size > 0) {
+      let path: string | null = null;
       try {
-        const path = await uploadFile("custom-request-images", file, `${requestId}/`);
+        path = await uploadFile("custom-request-images", file, `${requestId}/`);
         const { error: imageError } = await supabase.rpc("add_custom_request_image", {
           _request_id: requestId,
           _storage_path: path,
         } as never);
         if (imageError) throw imageError;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        toast.error(`Request sent, but the reference image failed: ${msg}`);
+        if (path) {
+          try {
+            await removeFile("custom-request-images", path);
+          } catch {
+            // The request is still valid; an administrator can remove any orphan later.
+          }
+        }
+        imageWarning = true;
       }
     }
 
     setSaving(false);
+    formElement.reset();
     setDone(requestId);
     toast.success("Request sent to the artist.");
+    if (imageWarning) {
+      toast.warning("The request was saved, but the reference image could not be attached.");
+    }
 
     const message = [
       `Namaste! I'd like to commission a custom painting.`,
@@ -125,8 +143,8 @@ function CustomPage() {
     ]
       .filter(Boolean)
       .join("\n");
-    if (settings.whatsapp_number) {
-      const link = whatsappLink(settings.whatsapp_number, message);
+    const link = whatsappLink(settings.whatsapp_number, message);
+    if (link) {
       setWaLink(link);
       // Mobile and in-app browsers often block popups opened after an await.
       const opened = window.open(link, "_blank", "noopener");
@@ -140,9 +158,25 @@ function CustomPage() {
         <p className="eyebrow">Commissions</p>
         <h1 className="mt-4 font-display text-4xl sm:text-5xl">Custom painting</h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          A portrait, a place that matters to you, a scene from memory — commissioned pieces are painted
-          from scratch on stretched canvas, usually over four to eight weeks.
+          A portrait, a place that matters to you, a scene from memory — commissioned pieces are
+          painted from scratch on stretched canvas, usually over four to eight weeks.
         </p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          {artistWhatsApp && (
+            <Button asChild variant="outline" className="rounded-none tracking-[0.12em] uppercase">
+              <a href={artistWhatsApp} target="_blank" rel="noreferrer">
+                <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} /> Contact on WhatsApp
+              </a>
+            </Button>
+          )}
+          {artistInstagram && (
+            <Button asChild variant="outline" className="rounded-none tracking-[0.12em] uppercase">
+              <a href={artistInstagram} target="_blank" rel="noreferrer">
+                <Instagram className="mr-2 h-4 w-4" strokeWidth={1.5} /> Follow on Instagram
+              </a>
+            </Button>
+          )}
+        </div>
 
         <ol className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((s, i) => (
@@ -160,8 +194,8 @@ function CustomPage() {
           <div>
             <h2 className="font-display text-3xl">Tell the artist your idea</h2>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              The more detail you give — subject, colours, where it will hang — the more accurate the
-              first sketch will be. You will receive a reply on WhatsApp, usually within a day.
+              The more detail you give — subject, colours, where it will hang — the more accurate
+              the first sketch will be. You will receive a reply on WhatsApp, usually within a day.
             </p>
             {done && (
               <p className="mt-6 border border-gold bg-background p-4 text-sm">
@@ -169,7 +203,12 @@ function CustomPage() {
                 {waLink && (
                   <>
                     {" "}
-                    <a href={waLink} target="_blank" rel="noopener noreferrer" className="underline">
+                    <a
+                      href={waLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
                       Continue on WhatsApp
                     </a>
                   </>
@@ -179,6 +218,10 @@ function CustomPage() {
           </div>
 
           <form onSubmit={submit} className="space-y-4">
+            <div className="absolute left-[-9999px]" aria-hidden="true">
+              <Label htmlFor="website">Website</Label>
+              <Input id="website" name="website" tabIndex={-1} autoComplete="off" />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field name="full_name" label="Full name" required />
               <Field name="whatsapp" label="WhatsApp number" type="tel" required />
@@ -211,11 +254,11 @@ function CustomPage() {
                 id="reference_image"
                 name="reference_image"
                 type="file"
-                accept="image/*,.heic,.heif"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif"
                 className="rounded-none bg-background"
               />
               <p className="text-xs text-muted-foreground">
-                Optional. JPG, PNG, WEBP or HEIC, up to 15 MB.
+                Optional. JPG, PNG, WEBP, GIF or HEIC, up to 15 MB.
               </p>
             </div>
             <Button

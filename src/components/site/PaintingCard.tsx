@@ -32,7 +32,9 @@ export function PaintingCard({ painting, priority }: { painting: Painting; prior
             />
           ) : (
             <div className="flex aspect-4/5 w-full items-center justify-center border border-dashed border-border">
-              <span className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">No image</span>
+              <span className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+                No image
+              </span>
             </div>
           )}
           {sold && (
@@ -52,19 +54,28 @@ export function PaintingCard({ painting, priority }: { painting: Painting; prior
             {[painting.medium, painting.dimensions, painting.year].filter(Boolean).join(" · ")}
           </p>
           <p className="mt-2 text-sm">
-            {sold ? <span className="text-muted-foreground">Not available</span> : formatPrice(painting.price)}
+            {sold ? (
+              <span className="text-muted-foreground">Not available</span>
+            ) : (
+              formatPrice(painting.price)
+            )}
           </p>
         </div>
       </Link>
       <button
         type="button"
         onClick={() => toggle(painting.id)}
-        aria-label={saved ? `Remove ${painting.title} from wishlist` : `Save ${painting.title} to wishlist`}
+        aria-label={
+          saved ? `Remove ${painting.title} from wishlist` : `Save ${painting.title} to wishlist`
+        }
         aria-pressed={saved}
         className="absolute right-0 bottom-1 inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-secondary"
       >
         <Heart
-          className={cn("h-[18px] w-[18px] transition-colors", saved ? "fill-clay text-clay" : "text-muted-foreground")}
+          className={cn(
+            "h-[18px] w-[18px] transition-colors",
+            saved ? "fill-clay text-clay" : "text-muted-foreground",
+          )}
           strokeWidth={1.5}
         />
       </button>

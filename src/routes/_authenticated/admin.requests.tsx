@@ -30,11 +30,16 @@ function AdminRequests() {
   useEffect(() => {
     const paths = requests.flatMap((r) => r.custom_request_images.map((i) => i.storage_path));
     if (paths.length === 0) return;
-    void signedUrls(BUCKET, paths).then(setImages);
+    void signedUrls(BUCKET, paths)
+      .then(setImages)
+      .catch(() => toast.error("Reference images could not be loaded."));
   }, [requests]);
 
   async function setStatus(id: string, status: string) {
-    const { error } = await supabase.from("custom_requests").update({ status } as never).eq("id", id);
+    const { error } = await supabase
+      .from("custom_requests")
+      .update({ status } as never)
+      .eq("id", id);
     if (error) {
       toast.error("Could not update the request.");
       return;
@@ -69,7 +74,9 @@ function AdminRequests() {
               </Select>
             </div>
 
-            <p className="mt-4 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">{r.idea}</p>
+            <p className="mt-4 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
+              {r.idea}
+            </p>
 
             <dl className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
               <p>Size: {r.preferred_size ?? "—"}</p>
@@ -91,9 +98,9 @@ function AdminRequests() {
             )}
 
             <div className="mt-5 flex flex-wrap gap-2">
-              {r.whatsapp && (
+              {r.whatsapp && whatsappLink(r.whatsapp) && (
                 <Button asChild variant="outline" size="sm" className="rounded-none">
-                  <a href={whatsappLink(r.whatsapp)} target="_blank" rel="noreferrer">
+                  <a href={whatsappLink(r.whatsapp)!} target="_blank" rel="noreferrer">
                     Reply on WhatsApp
                   </a>
                 </Button>
@@ -107,7 +114,9 @@ function AdminRequests() {
           </article>
         ))}
         {!isLoading && requests.length === 0 && (
-          <p className="bg-background p-10 text-center text-sm text-muted-foreground">No requests yet.</p>
+          <p className="bg-background p-10 text-center text-sm text-muted-foreground">
+            No requests yet.
+          </p>
         )}
       </div>
     </div>

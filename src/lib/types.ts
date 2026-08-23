@@ -144,7 +144,13 @@ export const STAGE_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-export const REQUEST_STATUSES = ["new", "contacted", "in_progress", "completed", "cancelled"] as const;
+export const REQUEST_STATUSES = [
+  "new",
+  "contacted",
+  "in_progress",
+  "completed",
+  "cancelled",
+] as const;
 
 export const REQUEST_LABELS: Record<string, string> = {
   new: "New",

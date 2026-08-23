@@ -10,7 +10,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Studio Dashboard — Artist Admin" },
-      { name: "description", content: "Private dashboard for managing paintings, orders and enquiries." },
+      {
+        name: "description",
+        content: "Private dashboard for managing paintings, orders and enquiries.",
+      },
       { property: "og:title", content: "Studio Dashboard" },
       { property: "og:description", content: "Private dashboard for the artist." },
       { name: "robots", content: "noindex" },
@@ -44,7 +47,9 @@ function AdminLayout() {
   useEffect(() => {
     if (isLoading || isAdmin !== false) return;
     toast.error("This account does not have studio access.");
-    void supabase.auth.signOut().then(() => navigate({ to: "/admin/login" as string, replace: true }));
+    void supabase.auth
+      .signOut()
+      .then(() => navigate({ to: "/admin/login" as string, replace: true }));
   }, [isAdmin, isLoading, navigate]);
 
   if (isLoading) {
@@ -52,7 +57,9 @@ function AdminLayout() {
   }
 
   if (!isAdmin) {
-    return <p className="p-16 text-center text-sm text-muted-foreground">Redirecting to sign in…</p>;
+    return (
+      <p className="p-16 text-center text-sm text-muted-foreground">Redirecting to sign in…</p>
+    );
   }
 
   return (

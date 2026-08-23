@@ -37,4 +37,11 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  {
+    files: ["src/components/ui/**/*.tsx"],
+    rules: {
+      // These primitives intentionally export variants/hooks alongside components.
+      "react-refresh/only-export-components": "off",
+    },
+  },
 );

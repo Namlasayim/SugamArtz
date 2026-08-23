@@ -24,9 +24,17 @@ export function useSession() {
 
 /** Ensures the signed-in user has a profile row. The role column is set by the database. */
 export async function ensureProfile(userId: string, name?: string | null) {
-  const { data } = await supabase.from("profiles").select("id").eq("user_id", userId).maybeSingle();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
   if (data) return;
-  await supabase.from("profiles").insert({ user_id: userId, name: name ?? null } as never);
+  const { error: insertError } = await supabase
+    .from("profiles")
+    .insert({ user_id: userId, name: name ?? null } as never);
+  if (insertError) throw insertError;
 }
 
 export function useIsAdmin(userId?: string) {
@@ -35,9 +43,10 @@ export function useIsAdmin(userId?: string) {
     enabled: Boolean(userId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("user_roles")
         .select("role")
         .eq("user_id", userId!)
+        .eq("role", "admin")
         .maybeSingle();
       if (error) throw error;
       return (data as { role?: string } | null)?.role === "admin";
@@ -111,11 +120,17 @@ export function useRefresh() {
 }
 
 export async function markNotificationRead(id: string) {
-  await supabase.from("notifications").update({ read: true } as never).eq("id", id);
+  await supabase
+    .from("notifications")
+    .update({ read: true } as never)
+    .eq("id", id);
 }
 
 export async function markAllNotificationsRead() {
-  await supabase.from("notifications").update({ read: true } as never).eq("read", false);
+  await supabase
+    .from("notifications")
+    .update({ read: true } as never)
+    .eq("read", false);
 }
 
 /** Payment is verified manually by the artist; the database performs the paid → confirmed → sold cascade. */

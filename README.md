@@ -42,21 +42,21 @@ Create these pages:
 
 /
 
- /gallery
+/gallery
 
- /painting/:id
+/painting/:id
 
- /custom
+/custom
 
- /about
+/about
 
- /contact
+/contact
 
- /track-order
+/track-order
 
- /wishlist
+/wishlist
 
- /order-confirmation
+/order-confirmation
 
 HOME PAGE:
 
@@ -404,3 +404,37 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+### First administrator
+
+Create the artist's account in Supabase Auth, then grant it studio access from a
+trusted environment. The service-role key must never be placed in the browser or
+committed to the repository:
+
+```sh
+SUPABASE_URL="https://your-project.supabase.co" \\
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key" \\
+npm run admin:bootstrap -- artist@example.com
+```
+
+This command is intentionally separate from public sign-up so a visitor cannot
+claim the first administrator account. The dashboard checks the `user_roles`
+table directly.
+
+### Supabase deployment
+
+Apply the migrations before using the order, commission or contact forms. The
+latest migration is additive and provisions the `painting-images`, `artist-assets`
+and `custom-request-images` buckets with a 15 MB image limit:
+
+```sh
+npx supabase link --project-ref your-project-ref
+npx supabase db push
+```
+
+Review the migration in `supabase/migrations/20260823120000_harden_gallery_and_repair_runtime.sql`
+before applying it to an existing project. It preserves existing business
+tables and historical rows; old sequential artwork/order codes cannot be made
+non-enumerable retroactively, but all new codes use random UUID-derived suffixes.
+Do not run the bootstrap command in a browser, CI log, or any environment where
+the service-role key could be exposed.

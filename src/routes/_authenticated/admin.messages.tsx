@@ -14,7 +14,10 @@ function AdminMessages() {
   const refresh = useRefresh();
 
   async function setRead(id: string, is_read: boolean) {
-    const { error } = await supabase.from("contact_messages").update({ is_read } as never).eq("id", id);
+    const { error } = await supabase
+      .from("contact_messages")
+      .update({ is_read } as never)
+      .eq("id", id);
     if (error) {
       toast.error("Could not update the message.");
       return;
@@ -52,9 +55,16 @@ function AdminMessages() {
                 </span>
               )}
             </div>
-            <p className="mt-4 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">{m.message}</p>
+            <p className="mt-4 text-sm leading-relaxed whitespace-pre-line text-muted-foreground">
+              {m.message}
+            </p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" className="rounded-none" onClick={() => setRead(m.id, !m.is_read)}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-none"
+                onClick={() => setRead(m.id, !m.is_read)}
+              >
                 Mark as {m.is_read ? "unread" : "read"}
               </Button>
               {m.email && (
@@ -62,14 +72,21 @@ function AdminMessages() {
                   <a href={`mailto:${m.email}`}>Reply by email</a>
                 </Button>
               )}
-              <Button variant="ghost" size="sm" className="rounded-none text-destructive" onClick={() => remove(m.id)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-none text-destructive"
+                onClick={() => remove(m.id)}
+              >
                 Delete
               </Button>
             </div>
           </article>
         ))}
         {!isLoading && messages.length === 0 && (
-          <p className="bg-background p-10 text-center text-sm text-muted-foreground">No messages yet.</p>
+          <p className="bg-background p-10 text-center text-sm text-muted-foreground">
+            No messages yet.
+          </p>
         )}
       </div>
     </div>

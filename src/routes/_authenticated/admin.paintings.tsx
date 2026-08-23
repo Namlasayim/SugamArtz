@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePaintings, useCategories, paintingImage, PAINTING_BUCKET } from "@/lib/paintings";
 import { useRefresh } from "@/lib/admin";
-import { uploadFile } from "@/lib/storage";
+import { imageUploadError, removeFile, uploadFile } from "@/lib/storage";
 import { formatPrice } from "@/lib/format";
 import type { Painting } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -39,13 +39,19 @@ function AdminPaintings() {
       toast.error("Could not delete the painting.");
       return;
     }
-    if (paths.length) await supabase.storage.from(PAINTING_BUCKET).remove(paths);
+    if (paths.length) {
+      const { error: storageError } = await supabase.storage.from(PAINTING_BUCKET).remove(paths);
+      if (storageError) toast.error("Painting deleted, but some image files could not be removed.");
+    }
     toast.success("Painting deleted.");
     refresh(["paintings"]);
   }
 
   async function quickUpdate(p: Painting, patch: Record<string, unknown>) {
-    const { error } = await supabase.from("paintings").update(patch as never).eq("id", p.id);
+    const { error } = await supabase
+      .from("paintings")
+      .update(patch as never)
+      .eq("id", p.id);
     if (error) {
       toast.error("Could not update the painting.");
       return;
@@ -57,7 +63,10 @@ function AdminPaintings() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl">Paintings</h1>
-        <Button onClick={() => setEditing("new")} className="rounded-none tracking-[0.12em] uppercase">
+        <Button
+          onClick={() => setEditing("new")}
+          className="rounded-none tracking-[0.12em] uppercase"
+        >
           <Plus className="mr-2 h-4 w-4" strokeWidth={1.5} /> Add painting
         </Button>
       </div>
@@ -77,7 +86,9 @@ function AdminPaintings() {
                 </div>
               )}
               <div className="min-w-48 flex-1">
-                <p className="eyebrow">{p.artwork_code} · {p.category}</p>
+                <p className="eyebrow">
+                  {p.artwork_code} · {p.category}
+                </p>
                 <h2 className="mt-1 font-display text-lg">{p.title}</h2>
                 <p className="text-sm text-muted-foreground">{formatPrice(Number(p.price))}</p>
               </div>
@@ -93,10 +104,19 @@ function AdminPaintings() {
                   </SelectContent>
                 </Select>
                 <label className="flex items-center gap-2 text-xs tracking-[0.12em] uppercase">
-                  <Switch checked={p.featured} onCheckedChange={(v) => quickUpdate(p, { featured: v })} />
+                  <Switch
+                    checked={p.featured}
+                    onCheckedChange={(v) => quickUpdate(p, { featured: v })}
+                  />
                   Featured
                 </label>
-                <Button variant="outline" size="icon" className="rounded-none" aria-label="Edit" onClick={() => setEditing(p)}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-none"
+                  aria-label="Edit"
+                  onClick={() => setEditing(p)}
+                >
                   <Pencil className="h-4 w-4" strokeWidth={1.5} />
                 </Button>
                 <Button
@@ -175,7 +195,10 @@ function PaintingDialog({
     let paintingId = painting?.id ?? null;
 
     if (painting) {
-      const { error } = await supabase.from("paintings").update(payload as never).eq("id", painting.id);
+      const { error } = await supabase
+        .from("paintings")
+        .update(payload as never)
+        .eq("id", painting.id);
       if (error) {
         setSaving(false);
         toast.error("Could not save the painting.");
@@ -199,14 +222,24 @@ function PaintingDialog({
     if (paintingId && files.length) {
       let index = painting?.imageRows.length ?? 0;
       for (const file of files) {
+        let path: string | null = null;
         try {
-          const path = await uploadFile(PAINTING_BUCKET, file, `${paintingId}/`);
+          const validationError = imageUploadError(file);
+          if (validationError) throw new Error(validationError);
+          path = await uploadFile(PAINTING_BUCKET, file, `${paintingId}/`);
           const { error: linkError } = await supabase
             .from("painting_images")
             .insert({ painting_id: paintingId, storage_path: path, sort_order: index } as never);
           if (linkError) throw linkError;
           index += 1;
         } catch (err) {
+          if (path) {
+            try {
+              await removeFile(PAINTING_BUCKET, path);
+            } catch {
+              // Avoid hiding the original upload/link error.
+            }
+          }
           const message = err instanceof Error ? err.message : "";
           toast.error(`Could not upload ${file.name}.${message ? ` ${message}` : ""}`);
         }
@@ -224,7 +257,14 @@ function PaintingDialog({
       toast.error("Could not remove the image.");
       return;
     }
-    if (path) await supabase.storage.from(PAINTING_BUCKET).remove([path]);
+    if (path) {
+      const { error: storageError } = await supabase.storage.from(PAINTING_BUCKET).remove([path]);
+      if (storageError) {
+        toast.error("Image record removed, but the storage file could not be deleted.");
+        onSaved();
+        return;
+      }
+    }
     toast.success("Image removed.");
     onSaved();
   }
@@ -240,7 +280,13 @@ function PaintingDialog({
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field name="title" label="Title" defaultValue={painting?.title ?? ""} required />
-            <Field name="price" label="Price (NPR)" type="number" defaultValue={painting?.price ?? ""} required />
+            <Field
+              name="price"
+              label="Price (NPR)"
+              type="number"
+              defaultValue={painting?.price ?? ""}
+              required
+            />
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
@@ -265,8 +311,18 @@ function PaintingDialog({
             <Field name="year" label="Year" type="number" defaultValue={painting?.year ?? ""} />
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field name="width" label="Width (cm)" type="number" defaultValue={painting?.width ?? ""} />
-            <Field name="height" label="Height (cm)" type="number" defaultValue={painting?.height ?? ""} />
+            <Field
+              name="width"
+              label="Width (cm)"
+              type="number"
+              defaultValue={painting?.width ?? ""}
+            />
+            <Field
+              name="height"
+              label="Height (cm)"
+              type="number"
+              defaultValue={painting?.height ?? ""}
+            />
             <div className="space-y-2">
               <Label htmlFor="status" className="eyebrow">
                 Status
@@ -287,8 +343,18 @@ function PaintingDialog({
             <input type="checkbox" name="featured" defaultChecked={painting?.featured ?? false} />
             Featured on the home page
           </label>
-          <TextField name="description" label="Short description" defaultValue={painting?.description ?? ""} rows={3} />
-          <TextField name="story" label="Story behind the work" defaultValue={painting?.story ?? ""} rows={3} />
+          <TextField
+            name="description"
+            label="Short description"
+            defaultValue={painting?.description ?? ""}
+            rows={3}
+          />
+          <TextField
+            name="story"
+            label="Story behind the work"
+            defaultValue={painting?.story ?? ""}
+            rows={3}
+          />
 
           {painting && painting.imageRows.length > 0 && (
             <div className="space-y-2">
@@ -325,7 +391,11 @@ function PaintingDialog({
             />
           </div>
 
-          <Button type="submit" disabled={saving} className="w-full rounded-none tracking-[0.12em] uppercase">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="w-full rounded-none tracking-[0.12em] uppercase"
+          >
             {saving ? "Saving…" : "Save painting"}
           </Button>
         </form>
@@ -380,7 +450,13 @@ function TextField({
       <Label htmlFor={name} className="eyebrow">
         {label}
       </Label>
-      <Textarea id={name} name={name} rows={rows} defaultValue={defaultValue} className="rounded-none" />
+      <Textarea
+        id={name}
+        name={name}
+        rows={rows}
+        defaultValue={defaultValue}
+        className="rounded-none"
+      />
     </div>
   );
 }

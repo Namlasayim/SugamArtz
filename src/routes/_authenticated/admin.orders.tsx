@@ -37,7 +37,10 @@ function AdminOrders() {
   });
 
   async function update(order: Order, patch: Record<string, unknown>) {
-    const { error } = await supabase.from("orders").update(patch as never).eq("id", order.id);
+    const { error } = await supabase
+      .from("orders")
+      .update(patch as never)
+      .eq("id", order.id);
     if (error) {
       toast.error("Could not update the order.");
       return;
@@ -70,7 +73,10 @@ function AdminOrders() {
             className="w-48 rounded-none bg-background"
           />
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-44 rounded-none bg-background" aria-label="Filter by status">
+            <SelectTrigger
+              className="w-44 rounded-none bg-background"
+              aria-label="Filter by status"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -92,7 +98,9 @@ function AdminOrders() {
           <article key={o.id} className="bg-background p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <div>
-                <p className="eyebrow">{o.order_number} · {formatDate(o.created_at)}</p>
+                <p className="eyebrow">
+                  {o.order_number} · {formatDate(o.created_at)}
+                </p>
                 <h2 className="mt-1 font-display text-xl">
                   {o.order_items.map((i) => i.painting_title_snapshot).join(", ") || "Order"}
                 </h2>
@@ -106,14 +114,23 @@ function AdminOrders() {
             </div>
 
             <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-              <p>{o.customers?.name ?? "—"} · {o.customers?.phone ?? "—"}</p>
+              <p>
+                {o.customers?.name ?? "—"} · {o.customers?.phone ?? "—"}
+              </p>
               <p>{o.customers?.email ?? "No email"}</p>
               <p className="sm:col-span-2">
-                {[o.addresses?.address, o.addresses?.municipality, o.addresses?.district, o.addresses?.province]
+                {[
+                  o.addresses?.address,
+                  o.addresses?.municipality,
+                  o.addresses?.district,
+                  o.addresses?.province,
+                ]
                   .filter(Boolean)
                   .join(", ") || "No address"}
               </p>
-              {o.addresses?.instructions && <p className="sm:col-span-2">Note: {o.addresses.instructions}</p>}
+              {o.addresses?.instructions && (
+                <p className="sm:col-span-2">Note: {o.addresses.instructions}</p>
+              )}
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -121,7 +138,11 @@ function AdminOrders() {
                 Payment: {o.payment_status === "paid" ? "Received" : "Pending"}
               </span>
               {o.payment_status !== "paid" && o.status !== "cancelled" && (
-                <Button size="sm" className="rounded-none tracking-[0.12em] uppercase" onClick={() => markPaid(o)}>
+                <Button
+                  size="sm"
+                  className="rounded-none tracking-[0.12em] uppercase"
+                  onClick={() => markPaid(o)}
+                >
                   Mark payment received
                 </Button>
               )}
@@ -141,25 +162,24 @@ function AdminOrders() {
                 </SelectContent>
               </Select>
 
-              <NoteEditor value={o.admin_notes} onSave={(admin_notes) => update(o, { admin_notes })} />
+              <NoteEditor
+                value={o.admin_notes}
+                onSave={(admin_notes) => update(o, { admin_notes })}
+              />
             </div>
           </article>
         ))}
         {!isLoading && rows.length === 0 && (
-          <p className="bg-background p-10 text-center text-sm text-muted-foreground">No orders yet.</p>
+          <p className="bg-background p-10 text-center text-sm text-muted-foreground">
+            No orders yet.
+          </p>
         )}
       </div>
     </div>
   );
 }
 
-function NoteEditor({
-  value,
-  onSave,
-}: {
-  value: string | null;
-  onSave: (value: string) => void;
-}) {
+function NoteEditor({ value, onSave }: { value: string | null; onSave: (value: string) => void }) {
   const [note, setNote] = useState(value ?? "");
   return (
     <div className="flex gap-2">

@@ -12,10 +12,14 @@ export const Route = createFileRoute("/wishlist")({
       { title: "Your Wishlist — Saved Paintings" },
       {
         name: "description",
-        content: "Paintings you have saved from the studio collection, stored privately on your own device.",
+        content:
+          "Paintings you have saved from the studio collection, stored privately on your own device.",
       },
       { property: "og:title", content: "Your Wishlist — Saved Paintings" },
-      { property: "og:description", content: "Paintings you have saved from the studio collection." },
+      {
+        property: "og:description",
+        content: "Paintings you have saved from the studio collection.",
+      },
     ],
   }),
   component: WishlistPage,
@@ -32,7 +36,8 @@ function WishlistPage() {
         <p className="eyebrow">Saved</p>
         <h1 className="mt-4 font-display text-4xl sm:text-5xl">Your wishlist</h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Saved privately on this device — no account needed. Clearing your browser data will clear the list.
+          Saved privately on this device — no account needed. Clearing your browser data will clear
+          the list.
         </p>
 
         {saved.length ? (

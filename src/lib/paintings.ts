@@ -21,7 +21,12 @@ async function mapPaintings(rows: Row[]): Promise<Painting[]> {
   const paths = rows.flatMap((r) =>
     ((r["painting_images"] as Row[] | null) ?? []).map((i) => String(i["storage_path"] ?? "")),
   );
-  const urls = await signedUrls(PAINTING_BUCKET, paths);
+  let urls = new Map<string, string>();
+  try {
+    urls = await signedUrls(PAINTING_BUCKET, paths);
+  } catch {
+    // Legacy rows may still contain a usable image_url even if storage signing is unavailable.
+  }
 
   return rows.map((r) => {
     const imageRows: PaintingImage[] = (((r["painting_images"] as Row[] | null) ?? []) as Row[])
@@ -29,7 +34,7 @@ async function mapPaintings(rows: Row[]): Promise<Painting[]> {
         id: String(i["id"]),
         storage_path: (i["storage_path"] as string | null) ?? null,
         image_url:
-          urls.get(String(i["storage_path"] ?? "")) ?? ((i["image_url"] as string | null) ?? ""),
+          urls.get(String(i["storage_path"] ?? "")) ?? (i["image_url"] as string | null) ?? "",
         sort_order: Number(i["sort_order"] ?? 0),
       }))
       .filter((i) => Boolean(i.image_url))
@@ -83,7 +88,11 @@ export function usePainting(id: string) {
     queryKey: ["painting", id],
     queryFn: async () => {
       const column = isUuid(id) ? "id" : "artwork_id";
-      const { data, error } = await supabase.from("paintings").select(SELECT).eq(column, id).maybeSingle();
+      const { data, error } = await supabase
+        .from("paintings")
+        .select(SELECT)
+        .eq(column, id)
+        .maybeSingle();
       if (error) throw error;
       if (!data) return null;
       const [painting] = await mapPaintings([data as unknown as Row]);

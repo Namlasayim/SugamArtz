@@ -29,9 +29,9 @@ function AuthPage() {
 
   useEffect(() => {
     if (!session) return;
-    void ensureProfile(session.user.id, session.user.email ?? null).then(() =>
-      navigate({ to: "/admin" as string }),
-    );
+    void ensureProfile(session.user.id, session.user.email ?? null)
+      .then(() => navigate({ to: "/admin" as string }))
+      .catch(() => toast.error("Could not load your studio profile. Please try again."));
   }, [session, navigate]);
 
   async function signIn(e: React.FormEvent<HTMLFormElement>) {
@@ -98,7 +98,11 @@ function AuthPage() {
             <form onSubmit={signIn} className="mt-6 space-y-4">
               <Field name="email" label="Email" type="email" />
               <Field name="password" label="Password" type="password" />
-              <Button type="submit" disabled={busy} className="w-full rounded-none tracking-[0.12em] uppercase">
+              <Button
+                type="submit"
+                disabled={busy}
+                className="w-full rounded-none tracking-[0.12em] uppercase"
+              >
                 {busy ? "Signing in…" : "Sign in"}
               </Button>
             </form>
@@ -107,8 +111,17 @@ function AuthPage() {
           <TabsContent value="signup">
             <form onSubmit={signUp} className="mt-6 space-y-4">
               <Field name="email" label="Email" type="email" />
-              <Field name="password" label="Password (min 8 characters)" type="password" minLength={8} />
-              <Button type="submit" disabled={busy} className="w-full rounded-none tracking-[0.12em] uppercase">
+              <Field
+                name="password"
+                label="Password (min 8 characters)"
+                type="password"
+                minLength={8}
+              />
+              <Button
+                type="submit"
+                disabled={busy}
+                className="w-full rounded-none tracking-[0.12em] uppercase"
+              >
                 {busy ? "Creating…" : "Create account"}
               </Button>
             </form>

@@ -81,12 +81,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Original Nepalese Paintings" },
       {
         name: "description",
-        content: "Original oil and acrylic paintings from a Kathmandu studio, sold directly by the artist.",
+        content:
+          "Original oil and acrylic paintings from a Kathmandu studio, sold directly by the artist.",
       },
       { property: "og:title", content: "Original Nepalese Paintings" },
       {
         property: "og:description",
-        content: "Original oil and acrylic paintings from a Kathmandu studio, sold directly by the artist.",
+        content:
+          "Original oil and acrylic paintings from a Kathmandu studio, sold directly by the artist.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

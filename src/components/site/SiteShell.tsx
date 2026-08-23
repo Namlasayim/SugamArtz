@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Heart, Instagram, Menu, MessageCircle, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useSettings, whatsappLink, instagramLink } from "@/lib/site";
+import { instagramLink, useSettings, whatsappLink } from "@/lib/site";
 import { useWishlist } from "@/lib/wishlist";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,7 @@ function SiteHeader() {
   const { settings } = useSettings();
   const { count } = useWishlist();
   const [open, setOpen] = useState(false);
+  const artistWhatsApp = whatsappLink(settings.whatsapp_number);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-md">
@@ -45,7 +46,9 @@ function SiteHeader() {
               key={item.to}
               to={item.to}
               className="text-[0.8rem] tracking-[0.12em] text-muted-foreground uppercase transition-colors hover:text-foreground"
-              activeProps={{ className: "text-foreground" }}
+              activeProps={{
+                className: "text-[0.8rem] tracking-[0.12em] text-foreground uppercase",
+              }}
             >
               {item.label}
             </Link>
@@ -65,15 +68,17 @@ function SiteHeader() {
               </span>
             )}
           </Link>
-          <a
-            href={whatsappLink(settings.whatsapp_number)}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Message the artist on WhatsApp"
-            className="hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary sm:inline-flex"
-          >
-            <MessageCircle className="h-[18px] w-[18px]" strokeWidth={1.5} />
-          </a>
+          {artistWhatsApp && (
+            <a
+              href={artistWhatsApp}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Message the artist on WhatsApp"
+              className="hidden h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary sm:inline-flex"
+            >
+              <MessageCircle className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            </a>
+          )}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -81,7 +86,11 @@ function SiteHeader() {
             aria-expanded={open}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary lg:hidden"
           >
-            {open ? <X className="h-5 w-5" strokeWidth={1.5} /> : <Menu className="h-5 w-5" strokeWidth={1.5} />}
+            {open ? (
+              <X className="h-5 w-5" strokeWidth={1.5} />
+            ) : (
+              <Menu className="h-5 w-5" strokeWidth={1.5} />
+            )}
           </button>
         </div>
       </div>
@@ -111,6 +120,9 @@ function SiteHeader() {
 
 function SiteFooter() {
   const { settings } = useSettings();
+  const artistWhatsApp = whatsappLink(settings.whatsapp_number);
+  const artistInstagram = instagramLink(settings.instagram_username);
+
   return (
     <footer className="mt-24 border-t border-border bg-canvas">
       <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:grid-cols-2 lg:grid-cols-4 lg:px-10">
@@ -119,14 +131,19 @@ function SiteFooter() {
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
             {settings.artist_statement}
           </p>
-          <p className="mt-4 text-sm text-muted-foreground">{settings.location}</p>
+          {settings.location && (
+            <p className="mt-4 text-sm text-muted-foreground">{settings.location}</p>
+          )}
         </div>
         <div>
           <p className="eyebrow">Explore</p>
           <ul className="mt-4 space-y-2.5 text-sm">
             {NAV.slice(0, 4).map((item) => (
               <li key={item.to}>
-                <Link to={item.to} className="text-muted-foreground transition-colors hover:text-foreground">
+                <Link
+                  to={item.to}
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                >
                   {item.label}
                 </Link>
               </li>
@@ -136,40 +153,47 @@ function SiteFooter() {
         <div>
           <p className="eyebrow">Reach the studio</p>
           <ul className="mt-4 space-y-2.5 text-sm">
-            <li>
-              <a
-                className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-                href={whatsappLink(settings.whatsapp_number)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <MessageCircle className="h-4 w-4" strokeWidth={1.5} /> WhatsApp
-              </a>
-            </li>
-            <li>
-              <a
-                className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-                href={instagramLink(settings.instagram_username)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Instagram className="h-4 w-4" strokeWidth={1.5} /> @{settings.instagram_username}
-              </a>
-            </li>
-            <li>
-              <a
-                className="text-muted-foreground transition-colors hover:text-foreground"
-                href={`mailto:${settings.contact_email}`}
-              >
-                {settings.contact_email}
-              </a>
-            </li>
+            {artistWhatsApp && (
+              <li>
+                <a
+                  className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+                  href={artistWhatsApp}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle className="h-4 w-4" strokeWidth={1.5} /> WhatsApp
+                </a>
+              </li>
+            )}
+            {artistInstagram && (
+              <li>
+                <a
+                  className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
+                  href={artistInstagram}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Instagram className="h-4 w-4" strokeWidth={1.5} /> @{settings.instagram_username}
+                </a>
+              </li>
+            )}
+            {settings.contact_email && (
+              <li>
+                <a
+                  className="text-muted-foreground transition-colors hover:text-foreground"
+                  href={`mailto:${settings.contact_email}`}
+                >
+                  {settings.contact_email}
+                </a>
+              </li>
+            )}
           </ul>
         </div>
       </div>
       <div className="border-t border-border/70">
         <div className="mx-auto max-w-7xl px-5 py-6 text-xs text-muted-foreground lg:px-10">
-          © {new Date().getFullYear()} {settings.artist_name}. All artworks are original and one of a kind.
+          © {new Date().getFullYear()} {settings.artist_name}. All artworks are original and one of
+          a kind.
         </div>
       </div>
     </footer>

@@ -30,8 +30,8 @@ function SoldPage() {
         <p className="eyebrow">Archive</p>
         <h1 className="mt-4 font-display text-4xl sm:text-5xl">Sold works</h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          These paintings now live in private collections. They remain here as a record of the studio's
-          work — and cannot be purchased. A similar piece can always be commissioned.
+          These paintings now live in private collections. They remain here as a record of the
+          studio's work — and cannot be purchased. A similar piece can always be commissioned.
         </p>
         <div className="mt-14 grid gap-x-8 gap-y-14 grid-cols-2 lg:grid-cols-3">
           {sold.map((p) => (

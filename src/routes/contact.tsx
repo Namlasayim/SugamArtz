@@ -31,6 +31,8 @@ function ContactPage() {
   const { settings } = useSettings();
   const [saving, setSaving] = useState(false);
   const [sent, setSent] = useState(false);
+  const artistWhatsApp = whatsappLink(settings.whatsapp_number);
+  const artistInstagram = instagramLink(settings.instagram_username);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -41,18 +43,20 @@ function ContactPage() {
     const full_name = get("full_name");
     const message = get("message");
     const email = get("email");
+    if (get("website")) return;
     if (full_name.length < 2 || message.length < 5) {
       toast.error("Please add your name and a message.");
       return;
     }
 
     setSaving(true);
-    const { error } = await supabase.from("contact_messages").insert({
-      full_name,
-      email: email || null,
-      phone: get("phone") || null,
-      message,
-    } as never);
+    const { error } = await supabase.rpc("submit_contact_message", {
+      _full_name: full_name,
+      _email: email,
+      _phone: get("phone"),
+      _message: message,
+      _website: get("website"),
+    });
     setSaving(false);
 
     if (error) {
@@ -73,46 +77,61 @@ function ContactPage() {
         <div className="mt-12 grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
           <div className="space-y-8">
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Every message reaches the artist directly. For anything urgent — a painting you want to hold,
-              a delivery date — WhatsApp is fastest.
+              Every message reaches the artist directly. For anything urgent — a painting you want
+              to hold, a delivery date — WhatsApp is fastest.
             </p>
             <ul className="space-y-5 text-sm">
-              <li className="flex gap-3">
-                <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-clay" strokeWidth={1.5} />
-                <a
-                  href={whatsappLink(settings.whatsapp_number)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="border-b border-foreground/20"
-                >
-                  WhatsApp +{settings.whatsapp_number}
-                </a>
-              </li>
-              <li className="flex gap-3">
-                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-clay" strokeWidth={1.5} />
-                <a href={`mailto:${settings.contact_email}`} className="border-b border-foreground/20">
-                  {settings.contact_email}
-                </a>
-              </li>
-              <li className="flex gap-3">
-                <Instagram className="mt-0.5 h-4 w-4 shrink-0 text-clay" strokeWidth={1.5} />
-                <a
-                  href={instagramLink(settings.instagram_username)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="border-b border-foreground/20"
-                >
-                  @{settings.instagram_username}
-                </a>
-              </li>
-              <li className="flex gap-3">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-clay" strokeWidth={1.5} />
-                <span className="text-muted-foreground">{settings.location}</span>
-              </li>
+              {artistWhatsApp && (
+                <li className="flex gap-3">
+                  <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-clay" strokeWidth={1.5} />
+                  <a
+                    href={artistWhatsApp}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="border-b border-foreground/20"
+                  >
+                    WhatsApp +{settings.whatsapp_number}
+                  </a>
+                </li>
+              )}
+              {settings.contact_email && (
+                <li className="flex gap-3">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-clay" strokeWidth={1.5} />
+                  <a
+                    href={`mailto:${settings.contact_email}`}
+                    className="border-b border-foreground/20"
+                  >
+                    {settings.contact_email}
+                  </a>
+                </li>
+              )}
+              {artistInstagram && (
+                <li className="flex gap-3">
+                  <Instagram className="mt-0.5 h-4 w-4 shrink-0 text-clay" strokeWidth={1.5} />
+                  <a
+                    href={artistInstagram}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="border-b border-foreground/20"
+                  >
+                    @{settings.instagram_username}
+                  </a>
+                </li>
+              )}
+              {settings.location && (
+                <li className="flex gap-3">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-clay" strokeWidth={1.5} />
+                  <span className="text-muted-foreground">{settings.location}</span>
+                </li>
+              )}
             </ul>
           </div>
 
           <form onSubmit={submit} className="space-y-4 bg-canvas p-6 sm:p-10">
+            <div className="absolute left-[-9999px]" aria-hidden="true">
+              <Label htmlFor="website">Website</Label>
+              <Input id="website" name="website" tabIndex={-1} autoComplete="off" />
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field name="full_name" label="Full name" required />
               <Field name="phone" label="Phone" type="tel" />

@@ -18,7 +18,19 @@ export interface OrderCustomerInput {
 export interface PlacedOrder {
   orderNumber: string;
   message: string;
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
 }
+
+export interface StoredOrderConfirmation {
+  orderNumber: string;
+  paintingTitle: string;
+  message: string;
+  copied: boolean;
+}
+
+const CONFIRMATION_PREFIX = "gallery:order-confirmation:";
 
 export async function placeOrder(
   painting: Painting,
@@ -41,17 +53,37 @@ export async function placeOrder(
   } as never);
   if (error) throw error;
 
-  const rows = (data ?? []) as Array<{ order_number: string }>;
-  const orderNumber = rows[0]?.order_number;
-  if (!orderNumber) throw new Error("Order could not be created.");
+  const rows = (data ?? []) as Array<{
+    order_number: string;
+    subtotal: number;
+    delivery_fee: number;
+    total: number;
+  }>;
+  const row = rows[0];
+  if (!row?.order_number) throw new Error("Order could not be created.");
 
+  const subtotal = Number(row.subtotal);
+  const actualDeliveryFee = Number(row.delivery_fee);
+  const total = Number(row.total);
+  if (![subtotal, actualDeliveryFee, total].every(Number.isFinite)) {
+    throw new Error("The order total could not be verified.");
+  }
   return {
-    orderNumber,
-    message: orderMessage(orderNumber, painting, input),
+    orderNumber: row.order_number,
+    message: orderMessage(row.order_number, painting, input, actualDeliveryFee, total),
+    subtotal,
+    deliveryFee: actualDeliveryFee,
+    total,
   };
 }
 
-export function orderMessage(orderNumber: string, painting: Painting, input: OrderCustomerInput) {
+export function orderMessage(
+  orderNumber: string,
+  painting: Painting,
+  input: OrderCustomerInput,
+  deliveryFee = 0,
+  total = Number(painting.price) + Number(deliveryFee),
+) {
   return [
     "Hello! I would like to purchase this painting.",
     "",
@@ -59,6 +91,8 @@ export function orderMessage(orderNumber: string, painting: Painting, input: Ord
     `Painting: ${painting.title}`,
     `Artwork ID: ${painting.artwork_code}`,
     `Price: ${formatPrice(painting.price)}`,
+    `Delivery fee: ${formatPrice(deliveryFee)}`,
+    `Total: ${formatPrice(total)}`,
     "",
     "Customer:",
     `Name: ${input.name}`,
@@ -76,6 +110,40 @@ export function orderMessage(orderNumber: string, painting: Painting, input: Ord
     "",
     "Please confirm the order and payment details.",
   ].join("\n");
+}
+
+export function saveOrderConfirmation(confirmation: StoredOrderConfirmation) {
+  if (typeof window === "undefined") return false;
+  try {
+    window.sessionStorage.setItem(
+      `${CONFIRMATION_PREFIX}${confirmation.orderNumber}`,
+      JSON.stringify(confirmation),
+    );
+    return true;
+  } catch {
+    // Keep the order dialog open so it can show the full message if storage is unavailable.
+    return false;
+  }
+}
+
+export function loadOrderConfirmation(orderNumber: string): StoredOrderConfirmation | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(`${CONFIRMATION_PREFIX}${orderNumber}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<StoredOrderConfirmation>;
+    if (
+      parsed.orderNumber !== orderNumber ||
+      typeof parsed.paintingTitle !== "string" ||
+      typeof parsed.message !== "string" ||
+      typeof parsed.copied !== "boolean"
+    ) {
+      return null;
+    }
+    return parsed as StoredOrderConfirmation;
+  } catch {
+    return null;
+  }
 }
 
 export async function copyToClipboard(text: string) {

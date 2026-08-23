@@ -57,7 +57,8 @@ function GalleryPage() {
     const term = search.trim().toLowerCase();
     const list = paintings.filter((p) => {
       if (term) {
-        const haystack = `${p.title} ${p.category} ${p.medium ?? ""} ${p.artwork_code} ${p.description ?? ""}`.toLowerCase();
+        const haystack =
+          `${p.title} ${p.category} ${p.medium ?? ""} ${p.artwork_code} ${p.description ?? ""}`.toLowerCase();
         if (!haystack.includes(term)) return false;
       }
       if (category !== "all" && p.category !== category) return false;
@@ -80,7 +81,8 @@ function GalleryPage() {
         <p className="eyebrow">The collection</p>
         <h1 className="mt-4 font-display text-4xl sm:text-5xl">Gallery</h1>
         <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Every painting is an original, signed work. Sold pieces remain on view as part of the archive.
+          Every painting is an original, signed work. Sold pieces remain on view as part of the
+          archive.
         </p>
 
         <div className="mt-10 grid gap-4 border-y border-border py-6 lg:grid-cols-[1.4fr_repeat(3,_1fr)] lg:items-center">

@@ -32,12 +32,12 @@ function Index() {
 
   const available = paintings.filter((p) => p.availability !== "sold");
   const featured = paintings.filter((p) => p.featured).slice(0, 3);
-  const latest = [...paintings]
-    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
-    .slice(0, 4);
+  const latest = [...paintings].sort((a, b) => (a.created_at < b.created_at ? 1 : -1)).slice(0, 4);
   const sold = paintings.filter((p) => p.availability === "sold").slice(0, 3);
   const hero = settings.hero_image ?? paintingImage(available[0] ?? { images: [] });
   const instagramTiles = paintings.filter((p) => paintingImage(p)).slice(0, 4);
+  const artistWhatsApp = whatsappLink(settings.whatsapp_number);
+  const artistInstagram = instagramLink(settings.instagram_username);
 
   return (
     <SiteShell>
@@ -45,7 +45,9 @@ function Index() {
       <section className="relative">
         <div className="grid lg:grid-cols-[1.05fr_1fr]">
           <div className="order-2 flex flex-col justify-center px-5 py-14 sm:py-20 lg:order-1 lg:px-16">
-            <p className="eyebrow">Original paintings{settings.location ? ` · ${settings.location}` : ""}</p>
+            <p className="eyebrow">
+              Original paintings{settings.location ? ` · ${settings.location}` : ""}
+            </p>
             <h1 className="mt-6 font-display text-[2.6rem] leading-[1.05] sm:text-6xl lg:text-7xl">
               {settings.artist_name}
             </h1>
@@ -75,7 +77,9 @@ function Index() {
               />
             ) : (
               <div className="flex h-[46vh] w-full items-center justify-center bg-canvas sm:h-[60vh] lg:h-full lg:min-h-[38rem]">
-                <p className="text-xs tracking-[0.24em] text-muted-foreground uppercase">Artwork coming soon</p>
+                <p className="text-xs tracking-[0.24em] text-muted-foreground uppercase">
+                  Artwork coming soon
+                </p>
               </div>
             )}
           </div>
@@ -93,7 +97,10 @@ function Index() {
               className="group inline-flex items-center gap-2 text-xs tracking-[0.16em] uppercase"
             >
               View all
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
+              <ArrowRight
+                className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                strokeWidth={1.5}
+              />
             </Link>
           }
         />
@@ -138,7 +145,9 @@ function Index() {
             />
           ) : (
             <div className="flex aspect-4/5 w-full items-center justify-center border border-dashed border-border">
-              <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">Studio portrait coming soon</p>
+              <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
+                Studio portrait coming soon
+              </p>
             </div>
           )}
           <div>
@@ -182,52 +191,68 @@ function Index() {
       </Section>
 
       {/* Instagram */}
-      {settings.instagram_username && (
-      <Section className="pt-24 sm:pt-32">
-        <div className="border border-border p-8 text-center sm:p-14">
-          <p className="eyebrow">Instagram</p>
-          <h2 className="mt-4 font-display text-3xl sm:text-4xl">@{settings.instagram_username}</h2>
-          <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-            Works in progress, studio light and new canvases before they reach the gallery.
-          </p>
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {instagramTiles.map((p) => (
-              <img
-                key={p.id}
-                src={paintingImage(p)!}
-                alt={p.title}
-                loading="lazy"
-                className="aspect-square w-full object-cover"
-              />
-            ))}
+      {artistInstagram && (
+        <Section className="pt-24 sm:pt-32">
+          <div className="border border-border p-8 text-center sm:p-14">
+            <p className="eyebrow">Instagram</p>
+            <h2 className="mt-4 font-display text-3xl sm:text-4xl">
+              @{settings.instagram_username}
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+              Works in progress, studio light and new canvases before they reach the gallery.
+            </p>
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {instagramTiles.map((p) => (
+                <img
+                  key={p.id}
+                  src={paintingImage(p)!}
+                  alt={p.title}
+                  loading="lazy"
+                  className="aspect-square w-full object-cover"
+                />
+              ))}
+            </div>
+            <Button
+              asChild
+              variant="outline"
+              className="mt-8 rounded-none tracking-[0.12em] uppercase"
+            >
+              <a href={artistInstagram} target="_blank" rel="noreferrer">
+                <Instagram className="mr-2 h-4 w-4" strokeWidth={1.5} /> Follow the studio
+              </a>
+            </Button>
           </div>
-          <Button asChild variant="outline" className="mt-8 rounded-none tracking-[0.12em] uppercase">
-            <a href={instagramLink(settings.instagram_username)} target="_blank" rel="noreferrer">
-              <Instagram className="mr-2 h-4 w-4" strokeWidth={1.5} /> Follow the studio
-            </a>
-          </Button>
-        </div>
-      </Section>
+        </Section>
       )}
 
       {/* Contact */}
       <Section className="pt-24 sm:pt-32">
         <div className="grid gap-8 bg-ink px-6 py-14 text-background sm:px-14 lg:grid-cols-[1.2fr_1fr] lg:items-center">
           <div>
-            <p className="text-[0.6875rem] tracking-[0.22em] text-background/60 uppercase">Enquiries</p>
+            <p className="text-[0.6875rem] tracking-[0.22em] text-background/60 uppercase">
+              Enquiries
+            </p>
             <h2 className="mt-4 font-display text-3xl leading-tight sm:text-4xl">
               Talk to the artist directly
             </h2>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-background/70">
-              Every order and commission is handled personally — no middlemen, no automated checkout.
+              Every order and commission is handled personally — no middlemen, no automated
+              checkout.
             </p>
           </div>
           <div className="flex flex-col gap-3">
-            <Button asChild size="lg" variant="secondary" className="rounded-none tracking-[0.12em] uppercase">
-              <a href={whatsappLink(settings.whatsapp_number)} target="_blank" rel="noreferrer">
-                <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} /> WhatsApp the artist
-              </a>
-            </Button>
+            {artistWhatsApp && (
+              <Button
+                asChild
+                size="lg"
+                variant="secondary"
+                className="rounded-none tracking-[0.12em] uppercase"
+              >
+                <a href={artistWhatsApp} target="_blank" rel="noreferrer">
+                  <MessageCircle className="mr-2 h-4 w-4" strokeWidth={1.5} /> WhatsApp the artist
+                </a>
+              </Button>
+            )}
             <Button
               asChild
               size="lg"
@@ -258,5 +283,9 @@ function GridSkeleton({ count }: { count: number }) {
 }
 
 function EmptyNote({ children }: { children: React.ReactNode }) {
-  return <p className="border border-dashed border-border p-10 text-center text-sm text-muted-foreground">{children}</p>;
+  return (
+    <p className="border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+      {children}
+    </p>
+  );
 }

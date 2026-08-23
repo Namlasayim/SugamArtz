@@ -21,9 +21,15 @@ function AdminOverview() {
 
   const stats = [
     { label: "Paintings", value: String(paintings.length) },
-    { label: "Available", value: String(paintings.filter((p) => p.availability === "available").length) },
+    {
+      label: "Available",
+      value: String(paintings.filter((p) => p.availability === "available").length),
+    },
     { label: "Sold", value: String(paintings.filter((p) => p.availability === "sold").length) },
-    { label: "Pending orders", value: String(orders.filter((o) => o.status === "pending_confirmation").length) },
+    {
+      label: "Pending orders",
+      value: String(orders.filter((o) => o.status === "pending_confirmation").length),
+    },
     { label: "Revenue", value: formatPrice(revenue) },
     { label: "Commissions", value: String(requests.filter((r) => r.status === "new").length) },
     { label: "Unread messages", value: String(messages.filter((m) => !m.is_read).length) },
@@ -43,7 +49,10 @@ function AdminOverview() {
       <div className="grid gap-8 lg:grid-cols-2">
         <Panel title="Recent orders" href="/admin/orders">
           {orders.slice(0, 6).map((o) => (
-            <li key={o.id} className="flex items-baseline justify-between gap-4 border-b border-border py-3 text-sm last:border-0">
+            <li
+              key={o.id}
+              className="flex items-baseline justify-between gap-4 border-b border-border py-3 text-sm last:border-0"
+            >
               <span>
                 <span className="text-muted-foreground">{o.order_number}</span> ·{" "}
                 {o.order_items.map((i) => i.painting_title_snapshot).join(", ")}
@@ -53,7 +62,9 @@ function AdminOverview() {
               </span>
             </li>
           ))}
-          {orders.length === 0 && <li className="py-3 text-sm text-muted-foreground">No orders yet.</li>}
+          {orders.length === 0 && (
+            <li className="py-3 text-sm text-muted-foreground">No orders yet.</li>
+          )}
         </Panel>
 
         <Panel title="Activity" href="/admin/requests">

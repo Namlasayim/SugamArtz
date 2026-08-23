@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomRouteImport } from './routes/custom'
 import { Route as GalleryRouteImport } from './routes/gallery'
+import { Route as OrderConfirmationRouteImport } from './routes/order-confirmation'
 import { Route as SoldRouteImport } from './routes/sold'
 import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as WishlistRouteImport } from './routes/wishlist'
@@ -61,6 +62,11 @@ const CustomRoute = CustomRouteImport.update({
 const GalleryRoute = GalleryRouteImport.update({
   id: '/gallery',
   path: '/gallery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderConfirmationRoute = OrderConfirmationRouteImport.update({
+  id: '/order-confirmation',
+  path: '/order-confirmation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SoldRoute = SoldRouteImport.update({
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/custom': typeof CustomRoute
   '/gallery': typeof GalleryRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/sold': typeof SoldRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/custom': typeof CustomRoute
   '/gallery': typeof GalleryRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/sold': typeof SoldRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/custom': typeof CustomRoute
   '/gallery': typeof GalleryRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/sold': typeof SoldRoute
   '/track-order': typeof TrackOrderRoute
   '/wishlist': typeof WishlistRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom'
     | '/gallery'
+    | '/order-confirmation'
     | '/sold'
     | '/track-order'
     | '/wishlist'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom'
     | '/gallery'
+    | '/order-confirmation'
     | '/sold'
     | '/track-order'
     | '/wishlist'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom'
     | '/gallery'
+    | '/order-confirmation'
     | '/sold'
     | '/track-order'
     | '/wishlist'
@@ -261,6 +273,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CustomRoute: typeof CustomRoute
   GalleryRoute: typeof GalleryRoute
+  OrderConfirmationRoute: typeof OrderConfirmationRoute
   SoldRoute: typeof SoldRoute
   TrackOrderRoute: typeof TrackOrderRoute
   WishlistRoute: typeof WishlistRoute
@@ -317,6 +330,13 @@ declare module '@tanstack/react-router' {
       path: '/gallery'
       fullPath: '/gallery'
       preLoaderRoute: typeof GalleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/order-confirmation': {
+      id: '/order-confirmation'
+      path: '/order-confirmation'
+      fullPath: '/order-confirmation'
+      preLoaderRoute: typeof OrderConfirmationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sold': {
@@ -446,6 +466,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CustomRoute: CustomRoute,
   GalleryRoute: GalleryRoute,
+  OrderConfirmationRoute: OrderConfirmationRoute,
   SoldRoute: SoldRoute,
   TrackOrderRoute: TrackOrderRoute,
   WishlistRoute: WishlistRoute,
